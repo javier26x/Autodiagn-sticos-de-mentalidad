@@ -491,6 +491,40 @@ body.is-question .wrap { padding-top: calc(12px + env(safe-area-inset-top)); }
 }
 
 /* =========================================================================
+ * Asistente por pasos del docente (stepper) + evaluación
+ * ====================================================================== */
+.stepper { display: flex; gap: 8px; margin: 6px 0 18px; }
+.stepper .st {
+  flex: 1; display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.10); color: #cfe8e0; font-weight: 800; font-size: 0.85rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.stepper .st .num {
+  width: 24px; height: 24px; border-radius: 50%; flex: 0 0 auto;
+  background: rgba(255,255,255,0.22); color: #fff; display: grid; place-items: center; font-size: 0.8rem; font-weight: 900;
+}
+.stepper .st.done { color: #fff; }
+.stepper .st.done .num { background: var(--green); color: #fff; }
+.stepper .st.active { background: #fff; color: var(--ink); }
+.stepper .st.active .num { background: var(--green); color: #fff; }
+.stepper .st.clickable { cursor: pointer; }
+.stepper .st.clickable:hover { background: rgba(255,255,255,0.2); }
+.stepper .st.active.clickable:hover { background: #fff; }
+@media (max-width: 560px) {
+  .stepper { gap: 6px; }
+  .stepper .st { justify-content: center; padding: 10px 6px; }
+  .stepper .st .lbl { display: none; }
+}
+
+.eval-chip {
+  display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #e8f5f0; color: #0a6b52; border-radius: 999px; padding: 9px 16px; font-weight: 800; font-size: 0.9rem;
+}
+.allDates { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); cursor: pointer; }
+.allDates input { width: 16px; height: 16px; accent-color: var(--green); }
+.field input[type="date"] { appearance: none; -webkit-appearance: none; }
+
+/* =========================================================================
  * Puerta de contraseña del facilitador
  * ====================================================================== */
 .gate {

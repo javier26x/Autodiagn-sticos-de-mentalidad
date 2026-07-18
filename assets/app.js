@@ -20,6 +20,7 @@
     idx: 0,
     sex: '',
     colegio: '',
+    fecha: '',
     m1: [null, null, null, null, null, null, null, null],
     m2: [null, null, null, null, null, null, null, null],
     submitted: false
@@ -36,8 +37,9 @@
   }
   function reset() {
     var keepColegio = state.colegio || '';
+    var keepFecha = state.fecha || '';
     state = {
-      stage: 'intro', idx: 0, sex: '', colegio: keepColegio,
+      stage: 'intro', idx: 0, sex: '', colegio: keepColegio, fecha: keepFecha,
       m1: [null, null, null, null, null, null, null, null],
       m2: [null, null, null, null, null, null, null, null],
       submitted: false
@@ -46,11 +48,15 @@
     render();
   }
 
-  // Colegio: viene en el QR (?colegio=...) o del valor por defecto de config.
-  (function resolveColegio() {
-    var fromUrl = new URLSearchParams(location.search).get('colegio');
-    if (fromUrl != null && fromUrl !== '') { state.colegio = fromUrl; save(); }
+  // Colegio y fecha: vienen en el QR (?colegio=...&fecha=...) o del valor por defecto.
+  (function resolveEvaluation() {
+    var params = new URLSearchParams(location.search);
+    var col = params.get('colegio');
+    var fec = params.get('fecha');
+    if (col != null && col !== '') { state.colegio = col; }
     else if (!state.colegio) { state.colegio = CFG.defaultColegio || ''; }
+    if (fec != null && fec !== '') { state.fecha = fec; }
+    save();
   })();
 
   // --- Utilidades ----------------------------------------------------------
@@ -386,6 +392,7 @@
       band1: res.band1, band2: res.band2,
       gap: res.gap, sex: res.sex || '',
       colegio: state.colegio || '',
+      fecha: state.fecha || '',
       event: CFG.eventName || ''
     };
 

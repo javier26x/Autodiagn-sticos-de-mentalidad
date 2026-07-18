@@ -109,15 +109,20 @@ Edita `config.js`:
 - `defaultColegio` — colegio por defecto (también puedes escribirlo en el tablero).
 - `backendUrl` — solo si usas la alternativa de Apps Script en vez de Firebase.
 
-### El tablero del facilitador
+### El panel del docente (`dashboard.html`)
 
-- **Contraseña**: al abrir `dashboard.html` se pide la contraseña de `facilitatorPassword`.
-  Es una barrera ligera del lado del cliente (mantiene fuera a curiosos), no cifrado fuerte;
-  como los datos son anónimos, es suficiente para el taller. Para protección real se puede
-  añadir Firebase Auth y restringir la lectura por reglas.
-- **Colegio**: escribe el nombre del colegio y pulsa *Guardar*. Se incrusta en el QR
-  (`index.html?colegio=…`), así **cada respuesta queda etiquetada** con ese colegio y el
-  tablero permite **filtrar** los resultados por colegio.
+Pensado para la pantalla del PC del docente, es un asistente de **4 pasos**:
+
+1. **Acceso** — contraseña (`facilitatorPassword`). Es una barrera ligera del lado del
+   cliente (mantiene fuera a curiosos), no cifrado fuerte; como los datos son anónimos, es
+   suficiente para el taller. Para protección real se puede añadir Firebase Auth y restringir
+   la lectura por reglas.
+2. **Colegio + fecha** — escribes el colegio y la fecha; con eso se **crea la evaluación**.
+   Colegio y fecha se incrustan en el QR (`index.html?colegio=…&fecha=…`), así **cada
+   respuesta queda etiquetada** con esa evaluación.
+3. **QR** — el código para proyectar en la sala (con pantalla completa e impresión).
+4. **Resultados** — en vivo, **solo de esa evaluación** (con opción de incluir todas las
+   fechas del colegio). Puedes volver al QR o crear una evaluación nueva cuando quieras.
 
 Los textos del instrumento están en `assets/quiz-data.js` por si necesitas ajustarlos.
 
