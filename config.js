@@ -15,6 +15,20 @@ window.QUIZ_CONFIG = {
   askSex: true,
 
   // ---------------------------------------------------------------------------
+  // TABLERO DEL FACILITADOR
+  // ---------------------------------------------------------------------------
+  // Contraseña para abrir dashboard.html. Cámbiala. Déjala en '' para no pedir
+  // ninguna. Nota: es una barrera ligera del lado del cliente (evita que
+  // curiosos vean el tablero), no cifrado fuerte; los datos siguen siendo
+  // anónimos. Para protección real, ver README (Firebase Auth).
+  facilitatorPassword: 'jump2026',
+
+  // Colegio por defecto para el que se aplica la prueba. Puedes dejarlo vacío y
+  // escribirlo en el propio tablero: desde ahí se incrusta en el QR y cada
+  // respuesta queda etiquetada con ese colegio.
+  defaultColegio: '',
+
+  // ---------------------------------------------------------------------------
   // RESULTADOS "EN LA WEB" con Firebase (recomendado).
   //
   // Con esto, el tablero (dashboard.html) muestra los resultados de TODA la sala

@@ -51,6 +51,15 @@ body {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Objetivos táctiles: sin retardo de 300ms, sin selección accidental. */
+button, .chip, .opt, .btn, a.linkbtn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .app {
@@ -63,7 +72,7 @@ body {
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
-  padding: 18px 18px 40px;
+  padding: 18px calc(18px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
 }
 
 /* --- Barra superior ------------------------------------------------------- */
@@ -73,7 +82,7 @@ body {
   justify-content: space-between;
   gap: 12px;
   color: #fff;
-  padding: 14px 20px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 12px calc(18px + env(safe-area-inset-left));
   max-width: 760px;
   margin: 0 auto;
   width: 100%;
@@ -93,6 +102,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 .topbar .meta { font-size: 0.8rem; opacity: 0.85; text-align: right; }
+.topbar .meta a { white-space: nowrap; }
 
 /* --- Tarjetas ------------------------------------------------------------- */
 .card {
@@ -309,6 +319,11 @@ table.log td.txt { text-align: left; color: var(--ink-soft); }
 
 /* --- Tablero (dashboard) -------------------------------------------------- */
 .qr-panel { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+@media (max-width: 560px) {
+  .qr-panel { grid-template-columns: 1fr; gap: 14px; }
+  .qr-box { justify-self: center; }
+  .qr-panel .btn-row { justify-content: flex-start; }
+}
 .qr-box {
   background: #fff; border-radius: 20px; padding: 16px; box-shadow: var(--shadow-sm);
   display: grid; place-items: center;
@@ -349,4 +364,77 @@ table.log td.txt { text-align: left; color: var(--ink-soft); }
   h1 { font-size: 2.3rem; }
   .statement p { font-size: 1.6rem; }
   .options { grid-template-columns: 1fr 1fr; }
+}
+
+/* =========================================================================
+ * MÓVIL: pantalla de pregunta a "pantalla completa" y compactación
+ * ====================================================================== */
+
+/* Durante las preguntas ocultamos la barra superior para ganar espacio y que
+ * la afirmación + las 6 opciones quepan sin desplazarse en la mayoría de
+ * teléfonos. */
+body.is-question .topbar { display: none; }
+body.is-question .wrap { padding-top: calc(12px + env(safe-area-inset-top)); }
+
+.school-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: #e8dcff; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px;
+}
+.school-tag b { color: #fff; }
+
+/* Pantallas de poca altura (la mayoría de teléfonos con el navegador abierto):
+ * reducir alturas para que todo quepa. */
+@media (max-height: 760px) {
+  .statement { min-height: 76px; padding: 18px 18px; margin: 10px 0 12px; }
+  .statement p { font-size: 1.2rem; }
+  .q-index { margin-bottom: 5px; }
+  .options { gap: 8px; }
+  .opt { padding: 12px 14px; font-size: 0.98rem; }
+  .opt .n { width: 30px; height: 30px; font-size: 0.95rem; }
+  .scale-hint { margin-bottom: 6px; }
+  .progress-head { margin-bottom: 9px; }
+}
+@media (max-height: 640px) {
+  .statement { min-height: 60px; padding: 14px 16px; }
+  .statement p { font-size: 1.08rem; }
+  .opt { padding: 10px 12px; font-size: 0.92rem; }
+  .opt .n { width: 27px; height: 27px; }
+}
+
+/* Teléfonos muy angostos: un poco menos de padding lateral en tarjetas. */
+@media (max-width: 380px) {
+  .card { padding: 22px 18px; }
+  h1 { font-size: 1.7rem; }
+  .opt .lbl { font-size: 0.98rem; }
+}
+
+/* =========================================================================
+ * Puerta de contraseña del facilitador
+ * ====================================================================== */
+.gate {
+  position: fixed; inset: 0; z-index: 5000;
+  display: grid; place-items: center; padding: 24px;
+  background:
+    radial-gradient(900px 500px at 20% -10%, #7a3fd6 0, rgba(122,63,214,0) 55%),
+    linear-gradient(160deg, var(--purple), var(--purple-deep));
+}
+.gate .card { max-width: 420px; width: 100%; }
+.gate .big-emoji { font-size: 2.6rem; }
+.field { margin-top: 12px; }
+.field label { display: block; font-weight: 800; font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 6px; }
+.field input {
+  width: 100%; font-family: inherit; font-size: 1.05rem; font-weight: 700;
+  padding: 14px 15px; border-radius: 14px; border: 2px solid var(--line);
+  color: var(--ink); background: #fff; outline: none;
+}
+.field input:focus { border-color: var(--purple-soft); }
+.gate .err { color: #c1122e; font-weight: 800; font-size: 0.85rem; margin: 10px 0 0; min-height: 1.1em; }
+
+/* Panel de configuración del facilitador (colegio, evento). */
+.config-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 620px) { .config-grid { grid-template-columns: 1fr 1fr; } }
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.filter-row select {
+  font-family: inherit; font-weight: 700; font-size: 0.95rem;
+  padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line); background: #fff; color: var(--ink);
 }

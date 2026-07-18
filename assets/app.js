@@ -19,6 +19,7 @@
     stage: 'intro', // intro | m1 | pause | m2 | results
     idx: 0,
     sex: '',
+    colegio: '',
     m1: [null, null, null, null, null, null, null, null],
     m2: [null, null, null, null, null, null, null, null],
     submitted: false
@@ -34,8 +35,9 @@
     } catch (e) { return null; }
   }
   function reset() {
+    var keepColegio = state.colegio || '';
     state = {
-      stage: 'intro', idx: 0, sex: '',
+      stage: 'intro', idx: 0, sex: '', colegio: keepColegio,
       m1: [null, null, null, null, null, null, null, null],
       m2: [null, null, null, null, null, null, null, null],
       submitted: false
@@ -43,6 +45,13 @@
     save();
     render();
   }
+
+  // Colegio: viene en el QR (?colegio=...) o del valor por defecto de config.
+  (function resolveColegio() {
+    var fromUrl = new URLSearchParams(location.search).get('colegio');
+    if (fromUrl != null && fromUrl !== '') { state.colegio = fromUrl; save(); }
+    else if (!state.colegio) { state.colegio = CFG.defaultColegio || ''; }
+  })();
 
   // --- Utilidades ----------------------------------------------------------
   function h(html) {
@@ -88,9 +97,14 @@
       '</div>'
     ].join('') : '';
 
+    var schoolTag = state.colegio
+      ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#f3effb;color:#4b2a90;border-radius:999px;padding:6px 12px;font-weight:800;font-size:.82rem;margin-bottom:10px">🏫 ' + esc(state.colegio) + '</div>'
+      : '';
+
     var node = h([
       '<div>',
       '  <div class="card">',
+      '    ' + schoolTag,
       '    <div class="eyebrow">' + esc(CFG.eventName || 'JUMP Math · Jornada de Mentalidades') + '</div>',
       '    <h1>Autodiagnósticos de mentalidad</h1>',
       '    <p class="lead">Dos breves reflexiones personales para descubrir cómo ves la inteligencia… y cómo ves las matemáticas. El corazón de la actividad es <b>comparar ambas</b>.</p>',
@@ -347,6 +361,7 @@
       m1: res.m1, m2: res.m2,
       band1: res.band1, band2: res.band2,
       gap: res.gap, sex: res.sex || '',
+      colegio: state.colegio || '',
       event: CFG.eventName || ''
     };
 
@@ -385,6 +400,8 @@
 
   // --- Router --------------------------------------------------------------
   function render() {
+    // En móvil, durante las preguntas ocultamos la barra superior (más espacio).
+    document.body.classList.toggle('is-question', state.stage === 'm1' || state.stage === 'm2');
     switch (state.stage) {
       case 'm1': renderQuestion('m1'); break;
       case 'pause': renderPause(); break;

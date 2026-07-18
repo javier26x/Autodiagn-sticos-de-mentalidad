@@ -12,10 +12,31 @@
   <div class="app">
     <header class="topbar">
       <div class="brand"><span class="dot">JM</span> JUMP Math · Tablero</div>
-      <div class="meta noprint"><a class="linkbtn" href="index.html" style="color:#fff;opacity:.85">Ir al cuestionario →</a></div>
+      <div class="meta noprint" id="topMeta"><a class="linkbtn" href="index.html" style="color:#fff;opacity:.85">Ir al cuestionario →</a></div>
     </header>
-    <main class="wrap">
 
+    <main class="wrap" id="dash" hidden>
+
+      <!-- Configuración: colegio -->
+      <div class="card noprint">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div class="eyebrow">Configuración de esta aplicación</div>
+          <button class="linkbtn" id="lockBtn" style="display:none">🔒 Bloquear</button>
+        </div>
+        <h2 style="margin:6px 0 10px">¿En qué colegio la aplicas?</h2>
+        <div class="config-grid">
+          <div class="field" style="margin:0">
+            <label for="colegioInput">Nombre del colegio</label>
+            <input id="colegioInput" type="text" placeholder="Ej. Colegio San Martín" autocomplete="off" />
+          </div>
+          <div class="field" style="margin:0;display:flex;flex-direction:column;justify-content:flex-end">
+            <button class="btn btn--primary" id="saveColegio" style="margin:0">Guardar y actualizar el QR</button>
+          </div>
+        </div>
+        <p class="fineprint" id="colegioNote" style="margin:10px 0 0">El colegio se incrusta en el QR: cada respuesta queda etiquetada con él.</p>
+      </div>
+
+      <!-- QR para proyectar -->
       <div class="card">
         <div class="eyebrow">Proyecta esto en la sala</div>
         <h1 style="margin:6px 0 12px">Escanea para responder</h1>
@@ -33,11 +54,13 @@
         </div>
       </div>
 
+      <!-- Resultados -->
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <h2 style="margin:0">Resultados en vivo</h2>
           <button class="btn btn--dark small noprint" id="refreshBtn" style="width:auto">Actualizar</button>
         </div>
+        <div class="filter-row noprint" id="filterRow"></div>
         <p class="muted" id="sourceNote" style="margin:6px 0 0"></p>
         <div id="results"></div>
       </div>

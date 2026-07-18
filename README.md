@@ -105,7 +105,19 @@ Edita `config.js`:
 - `eventName` — el nombre que aparece en la portada y el tablero.
 - `firebase` — la configuración de tu proyecto de Firebase (déjala si usas la nube).
 - `askSex` — `true`/`false` para pedir (o no) el sexo docente del sondeo anónimo.
+- `facilitatorPassword` — contraseña para abrir el tablero (`''` = sin contraseña).
+- `defaultColegio` — colegio por defecto (también puedes escribirlo en el tablero).
 - `backendUrl` — solo si usas la alternativa de Apps Script en vez de Firebase.
+
+### El tablero del facilitador
+
+- **Contraseña**: al abrir `dashboard.html` se pide la contraseña de `facilitatorPassword`.
+  Es una barrera ligera del lado del cliente (mantiene fuera a curiosos), no cifrado fuerte;
+  como los datos son anónimos, es suficiente para el taller. Para protección real se puede
+  añadir Firebase Auth y restringir la lectura por reglas.
+- **Colegio**: escribe el nombre del colegio y pulsa *Guardar*. Se incrusta en el QR
+  (`index.html?colegio=…`), así **cada respuesta queda etiquetada** con ese colegio y el
+  tablero permite **filtrar** los resultados por colegio.
 
 Los textos del instrumento están en `assets/quiz-data.js` por si necesitas ajustarlos.
 
