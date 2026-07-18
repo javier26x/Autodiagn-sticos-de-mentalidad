@@ -140,7 +140,7 @@
 
     document.getElementById('fsBtn').addEventListener('click', function () {
       var ov = document.createElement('div');
-      ov.style.cssText = 'position:fixed;inset:0;background:#2d0e63;z-index:9999;display:flex;' +
+      ov.style.cssText = 'position:fixed;inset:0;background:#0b2338;z-index:9999;display:flex;' +
         'flex-direction:column;align-items:center;justify-content:center;gap:22px;cursor:pointer;padding:24px';
       var qr = qrcode(0, 'M'); qr.addData(quizUrl()); qr.make();
       var white = document.createElement('div');
@@ -152,7 +152,7 @@
       cap.style.cssText = 'color:#fff;font-weight:900;font-size:clamp(1.1rem,3vw,2rem);text-align:center';
       cap.textContent = getColegio() ? ('Escanea para responder · ' + getColegio()) : 'Escanea para responder';
       var hint = document.createElement('div');
-      hint.style.cssText = 'color:#c9b6f2;font-weight:700;font-size:.9rem';
+      hint.style.cssText = 'color:#9fd8c8;font-weight:700;font-size:.9rem';
       hint.textContent = 'Toca para cerrar';
       ov.appendChild(cap); ov.appendChild(white); ov.appendChild(hint);
       ov.addEventListener('click', function () { document.body.removeChild(ov); });
@@ -196,10 +196,28 @@
       renderStats(rows);
     }
 
+    var toastEl = null, toastTimer = null;
+    function showToast(msg) {
+      if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
+      toastEl.textContent = msg;
+      toastEl.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 2600);
+    }
+
+    var prevTotal = null;
     function setData(rows) {
-      allRows = rows || [];
+      var newRows = rows || [];
+      var increased = (prevTotal !== null && newRows.length > prevTotal);
+      prevTotal = newRows.length;
+      allRows = newRows;
       buildFilter();
       renderFiltered();
+      if (increased) {
+        showToast('Nueva respuesta ✓');
+        var first = resultsEl.querySelector('.stats .stat');
+        if (first) { first.classList.remove('bump'); void first.offsetWidth; first.classList.add('bump'); }
+      }
     }
 
     // --- Estadística ------------------------------------------------------
@@ -236,22 +254,72 @@
 
     function num(x, d) { return (Math.round(x * (d ? 10 : 1)) / (d ? 10 : 1)).toFixed(d ? 1 : 0); }
 
-    function distBars(dist, total) {
-      var order = [
-        { id: 'fija', label: 'Fija', color: 'var(--band-fija)' },
-        { id: 'mixta', label: 'Mixta / transición', color: 'var(--band-mixta)' },
-        { id: 'crecimiento', label: 'Crecimiento', color: 'var(--band-crec)' }
-      ];
-      return order.map(function (b) {
+    var BANDS = [
+      { id: 'fija', label: 'Fija', color: 'var(--band-fija)', cls: '' },
+      { id: 'mixta', label: 'Mixta / en transición', color: 'var(--band-mixta)', cls: 'gray' },
+      { id: 'crecimiento', label: 'Crecimiento', color: 'var(--band-crec)', cls: '' }
+    ];
+
+    function gaugePct(score) {
+      var p = ((score - Q.SCORE_MIN) / (Q.SCORE_MAX - Q.SCORE_MIN)) * 100;
+      return Math.max(0, Math.min(100, p));
+    }
+
+    function legendHTML() {
+      return '<div class="dist-legend">' + BANDS.map(function (b) {
+        return '<span class="lg"><span class="sw" style="background:' + b.color + '"></span>' + b.label + '</span>';
+      }).join('') + '</div>';
+    }
+
+    // Barra 100% apilada de una distribución {fija,mixta,crecimiento}.
+    function stackBar(dist, total, momentLabel) {
+      var segs = BANDS.map(function (b) {
         var c = dist[b.id] || 0;
-        var pct = total ? Math.round((c / total) * 100) : 0;
-        return [
-          '<div class="dist-row">',
-          '  <div class="dl"><span>' + b.label + '</span><span>' + c + ' · ' + pct + '%</span></div>',
-          '  <div class="dist-bar"><span style="width:' + pct + '%;background:' + b.color + '"></span></div>',
-          '</div>'
-        ].join('');
+        if (!c) return '';
+        var pct = total ? (c / total * 100) : 0;
+        var tiny = pct < 9 ? ' tiny' : '';
+        var tip = momentLabel + ' · ' + b.label + ': ' + c + ' (' + Math.round(pct) + '%)';
+        return '<div class="seg ' + b.cls + tiny + '" style="flex-grow:' + pct + ';flex-basis:0;background:' + b.color + '" ' +
+          'data-tip="' + esc(tip) + '">' + Math.round(pct) + '%</div>';
       }).join('');
+      return '<div class="stackbar">' + segs + '</div>';
+    }
+
+    // Animación de conteo (da sensación "en vivo" cuando cambian los datos).
+    var lastNums = {};
+    function countUp(el, from, to, dec, pre) {
+      var start = Date.now(), dur = 650;
+      function frame() {
+        var t = Math.min(1, (Date.now() - start) / dur);
+        var e = 1 - Math.pow(1 - t, 3);
+        var v = from + (to - from) * e;
+        el.textContent = (pre && v > 0 ? '+' : '') + v.toFixed(dec);
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      frame();
+    }
+    function animateNums(container) {
+      container.querySelectorAll('.js-num').forEach(function (el) {
+        var key = el.getAttribute('data-key');
+        var to = parseFloat(el.getAttribute('data-to'));
+        var dec = parseInt(el.getAttribute('data-dec') || '0', 10);
+        var pre = el.getAttribute('data-pre') === '1';
+        var from = (key in lastNums) ? lastNums[key] : 0;
+        countUp(el, from, to, dec, pre);
+        lastNums[key] = to;
+      });
+    }
+
+    // Tooltip compartido para las barras.
+    var tip = document.createElement('div');
+    tip.className = 'viz-tip';
+    document.body.appendChild(tip);
+    function attachTips(container) {
+      container.querySelectorAll('[data-tip]').forEach(function (el) {
+        el.addEventListener('mouseenter', function () { tip.textContent = el.getAttribute('data-tip'); tip.classList.add('on'); });
+        el.addEventListener('mousemove', function (e) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; });
+        el.addEventListener('mouseleave', function () { tip.classList.remove('on'); });
+      });
     }
 
     var SEX_LABEL = { F: 'Mujeres', M: 'Hombres', X: 'Sin especificar' };
@@ -281,28 +349,65 @@
       ].join('');
     }
 
+    function isLive() { return !!(window.CLOUD && window.CLOUD.enabled); }
+
+    function statTile(k, key, to, dec, opts) {
+      opts = opts || {};
+      var initial = (opts.pre && to > 0 ? '+' : '') + Number(to).toFixed(dec);
+      return '<div class="stat"><div class="k">' + k + '</div><div class="v">' +
+        '<span class="js-num" data-key="' + key + '" data-to="' + to + '" data-dec="' + dec + '"' +
+        (opts.pre ? ' data-pre="1"' : '') + '>' + initial + '</span>' +
+        (opts.suffix || '') + '</div></div>';
+    }
+
     function renderStats(rows) {
+      var liveHead = isLive()
+        ? '<div class="results-head"><span class="live-pill"><span class="live-dot"></span>EN VIVO</span>' +
+          '<span class="muted" style="font-size:.85rem">Se actualiza solo cuando alguien termina.</span></div>'
+        : '';
+
       if (!rows.length) {
-        resultsEl.innerHTML = '<div class="stat" style="margin-top:12px"><div class="k">Sin respuestas todavía</div>' +
+        resultsEl.innerHTML = liveHead +
+          '<div class="stat"><div class="k">Sin respuestas todavía</div>' +
           '<div class="v" style="font-size:1.05rem;font-weight:800;color:var(--ink-soft)">Cuando los docentes completen el cuestionario, verás aquí los promedios y la distribución.</div></div>';
         return;
       }
       var st = computeStats(rows);
       var html = [
+        liveHead,
         '<div class="stats">',
-        '  <div class="stat"><div class="k">Respuestas</div><div class="v">' + st.n + '</div></div>',
-        '  <div class="stat"><div class="k">Promedio Momento 1</div><div class="v">' + num(st.m1avg, 1) + '<small> / 48</small></div></div>',
-        '  <div class="stat"><div class="k">Promedio Momento 2</div><div class="v">' + num(st.m2avg, 1) + '<small> / 48</small></div></div>',
-        '  <div class="stat"><div class="k">Brecha promedio (M2−M1)</div><div class="v">' + (st.gapavg >= 0 ? '+' : '') + num(st.gapavg, 1) + '</div></div>',
-        '  <div class="stat"><div class="k">Más “fijos” en mates</div><div class="v">' + st.mathLowerPct + '<small>%</small></div></div>',
+        statTile('Respuestas', 'n', st.n, 0),
+        statTile('Promedio Momento 1', 'm1', +st.m1avg.toFixed(1), 1, { suffix: '<small> / 48</small>' }),
+        statTile('Promedio Momento 2', 'm2', +st.m2avg.toFixed(1), 1, { suffix: '<small> / 48</small>' }),
+        statTile('Brecha promedio (M2−M1)', 'gap', +st.gapavg.toFixed(1), 1, { pre: true }),
+        statTile('Más “fijos” en mates', 'ml', st.mathLowerPct, 0, { suffix: '<small>%</small>' }),
         '</div>',
-        '<div class="compare" style="margin-top:18px">',
-        '  <div><h2 style="font-size:1.05rem">Momento 1 · en general</h2>' + distBars(st.dist1, st.n) + '</div>',
-        '  <div><h2 style="font-size:1.05rem">Momento 2 · en matemáticas</h2>' + distBars(st.dist2, st.n) + '</div>',
+
+        // Gauge: promedio de la sala en la escala 8..48
+        '<h2 style="font-size:1.05rem;margin:22px 0 6px">Promedio de la sala en la escala</h2>',
+        '<div class="gauge" style="margin-top:20px">',
+        '  <div class="gauge-track">',
+        '    <div class="gauge-mark blue" style="left:' + gaugePct(st.m1avg) + '%" data-label="M1"></div>',
+        '    <div class="gauge-mark green" style="left:' + gaugePct(st.m2avg) + '%" data-label="M2"></div>',
+        '  </div>',
+        '  <div class="gauge-scale"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div>',
         '</div>',
+
+        // Distribución por bandas (100% apilada)
+        '<h2 style="font-size:1.05rem;margin:24px 0 8px">Distribución por bandas</h2>',
+        legendHTML(),
+        '<div class="stack-block">',
+        '  <div class="stack-label"><span class="mchip blue">M1</span> En general</div>',
+        stackBar(st.dist1, st.n, 'M1 · en general'),
+        '  <div class="stack-label"><span class="mchip green">M2</span> En matemáticas</div>',
+        stackBar(st.dist2, st.n, 'M2 · en matemáticas'),
+        '</div>',
+
         (CFG.askSex !== false ? sexTable(st.bySex) : '')
       ].join('');
       resultsEl.innerHTML = html;
+      animateNums(resultsEl);
+      attachTips(resultsEl);
     }
 
     // --- Carga (Firebase en vivo / Apps Script / local) -------------------

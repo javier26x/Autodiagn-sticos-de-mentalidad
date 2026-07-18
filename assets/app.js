@@ -98,7 +98,7 @@
     ].join('') : '';
 
     var schoolTag = state.colegio
-      ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#f3effb;color:#4b2a90;border-radius:999px;padding:6px 12px;font-weight:800;font-size:.82rem;margin-bottom:10px">🏫 ' + esc(state.colegio) + '</div>'
+      ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#e8f5f0;color:#0a6b52;border-radius:999px;padding:6px 12px;font-weight:800;font-size:.82rem;margin-bottom:10px">🏫 ' + esc(state.colegio) + '</div>'
       : '';
 
     var node = h([
@@ -185,7 +185,7 @@
       '  <div class="options">' + opts + '</div>',
       '  <div class="q-nav">',
       (i > 0 ? '<button class="linkbtn" id="backBtn" style="color:#fff">← Anterior</button>' : '<span></span>'),
-      '    <span class="muted" style="color:#e8dcff;font-size:.82rem">Toca tu respuesta</span>',
+      '    <span class="muted" style="color:#cfe8e0;font-size:.82rem">Toca tu respuesta</span>',
       '  </div>',
       '</div>'
     ].join(''));
@@ -277,19 +277,19 @@
       '    <div class="compare">',
       '      <div class="moment-card m1">',
       '        <div class="tag">Momento 1</div><div class="sub">En general</div>',
-      '        <div class="val">' + res.m1 + '<small> / 48</small></div>',
+      '        <div class="val"><span class="js-score" data-to="' + res.m1 + '">0</span><small> / 48</small></div>',
       '        <span class="band-tag">' + esc(shortBand(b1)) + '</span>',
       '      </div>',
       '      <div class="moment-card m2">',
       '        <div class="tag">Momento 2</div><div class="sub">En matemáticas</div>',
-      '        <div class="val">' + res.m2 + '<small> / 48</small></div>',
+      '        <div class="val"><span class="js-score" data-to="' + res.m2 + '">0</span><small> / 48</small></div>',
       '        <span class="band-tag">' + esc(shortBand(b2)) + '</span>',
       '      </div>',
       '    </div>',
-      '    <div class="gauge">',
+      '    <div class="gauge" style="margin-top:20px">',
       '      <div class="gauge-track">',
-      '        <div class="gauge-mark" style="left:' + gaugePct(res.m1) + '%" data-label="M1"></div>',
-      '        <div class="gauge-mark" style="left:' + gaugePct(res.m2) + '%;border-color:#0b5fae" data-label="M2"></div>',
+      '        <div class="gauge-mark blue" data-left="' + gaugePct(res.m1) + '" style="left:0" data-label="M1"></div>',
+      '        <div class="gauge-mark green" data-left="' + gaugePct(res.m2) + '" style="left:0" data-label="M2"></div>',
       '      </div>',
       '      <div class="gauge-scale"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div>',
       '    </div>',
@@ -306,7 +306,7 @@
       '  <div class="card">',
       '    <p class="fineprint" style="margin-top:0">El puntaje es una fotografía, no un veredicto: la mentalidad es cultivable. Las bandas son provisionales y se recalibran tras la primera aplicación.</p>',
       '    <div class="btn-row noprint">',
-      '      <button class="btn btn--ghost small" id="printBtn" style="color:#4b2a90;border-color:#d7cdf0">Guardar / imprimir</button>',
+      '      <button class="btn btn--ghost small" id="printBtn" style="color:#0a6b52;border-color:#bfe0d5">Guardar / imprimir</button>',
       '      <button class="btn btn--dark small" id="againBtn">Empezar de nuevo</button>',
       '    </div>',
       '  </div>',
@@ -316,6 +316,27 @@
     node.querySelector('#printBtn').addEventListener('click', function () { window.print(); });
     node.querySelector('#againBtn').addEventListener('click', reset);
     show(node);
+
+    // Animaciones de revelado: conteo de puntajes + deslizar marcadores del gauge.
+    node.querySelectorAll('.js-score').forEach(function (el) {
+      countUp(el, parseFloat(el.getAttribute('data-to')), 0);
+    });
+    requestAnimationFrame(function () {
+      node.querySelectorAll('.gauge-mark[data-left]').forEach(function (m) {
+        m.style.left = m.getAttribute('data-left') + '%';
+      });
+    });
+  }
+
+  function countUp(el, to, dec) {
+    var start = Date.now(), dur = 750, from = 0;
+    function frame() {
+      var t = Math.min(1, (Date.now() - start) / dur);
+      var e = 1 - Math.pow(1 - t, 3);
+      el.textContent = (from + (to - from) * e).toFixed(dec);
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    frame();
   }
 
   function shortBand(b) {
