@@ -82,7 +82,7 @@
 
   // --- URL del cuestionario para la evaluación ------------------------------
   function quizUrl() {
-    var u = new URL('index.html', window.location.href);
+    var u = new URL('encuesta.html', window.location.href);
     if (evaluation && evaluation.colegio) u.searchParams.set('colegio', evaluation.colegio);
     if (evaluation && evaluation.fecha) u.searchParams.set('fecha', evaluation.fecha);
     return u.href;

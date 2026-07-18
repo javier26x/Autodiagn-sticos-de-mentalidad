@@ -129,7 +129,7 @@
       '    <button class="btn btn--primary" id="startBtn">Empezar el Momento 1 →</button>',
       '    <p class="fineprint center" style="margin:14px 0 0">No se recoge tu nombre ni ningún dato personal. Todo queda en este dispositivo salvo un conteo agregado y anónimo.</p>',
       '  </div>',
-      '  <p class="center noprint" style="margin-top:14px"><a class="linkbtn" href="dashboard.html" style="color:#ffffff;opacity:.85">¿Eres facilitador/a? Abre el tablero y el QR →</a></p>',
+      '  <p class="center noprint" style="margin-top:14px"><a class="linkbtn" href="index.html" style="color:#ffffff;opacity:.85">¿Eres docente? Entra al panel →</a></p>',
       '</div>'
     ].join(''));
 

@@ -18,12 +18,12 @@ Dweck (8 ítems), en la adaptación al español de Correa-Rojas, Grimaldo y Marc
 
 | Archivo | Para qué sirve |
 |---|---|
-| `index.html` | El cuestionario para los docentes (Momento 1 → teoría → Momento 2 → resultado). |
-| `dashboard.html` | Tablero del facilitador: **QR grande para proyectar** + resultados agregados. |
+| `index.html` | **Panel del docente** (la raíz `/`): login → colegio+fecha → QR → resultados. |
+| `encuesta.html` | El cuestionario que responden los docentes (la dirección personalizada del QR). |
 | `config.js` | **Lo único que necesitas editar.** Nombre del evento y configuración de Firebase. |
 | `firestore.rules` | Reglas de seguridad para pegar en la consola de Firebase (una vez). |
 | `apps-script.gs` | Alternativa a Firebase: backend gratis con una Hoja de Google. |
-| `assets/` | Estilos, lógica, `firebase.js` y la imagen `qr-cuestionario.png` (por si la imprimes). |
+| `assets/` | Estilos, lógica y `firebase.js`. |
 
 ---
 
@@ -36,27 +36,29 @@ Dweck (8 ítems), en la adaptación al español de Correa-Rojas, Grimaldo y Marc
 4. En 1–2 minutos tu web estará en:
    `https://javier26x.github.io/Autodiagn-sticos-de-mentalidad/`
 
-Con esto ya funciona: cada docente responde y ve su propio resultado y su comparación.
-El **QR del tablero se genera solo** apuntando a tu web, así que siempre es correcto.
+La **raíz `/` es el panel del docente** (empieza por el login). El **QR se genera solo**
+apuntando a `encuesta.html?colegio=…&fecha=…`, así que siempre es correcto.
 
 **Alternativa — Firebase Hosting** (todo bajo Firebase). En una terminal o en Cloud Shell,
 dentro de la carpeta del proyecto:
 ```bash
 firebase use autodiagnosticos-jm
-firebase deploy --only hosting
+firebase deploy
 ```
-Tu web quedará en `https://autodiagnosticos-jm.web.app/` (el QR del tablero se ajusta solo).
+El panel quedará en `https://autodiagnosticos-jm.web.app/` y el QR apuntará a
+`https://autodiagnosticos-jm.web.app/encuesta.html?colegio=…&fecha=…`.
 
-### 2) Muestra el QR en la sala
-Abre `…/dashboard.html`, proyéctalo y pulsa **«Pantalla completa»**.
-Los docentes escanean con la cámara del teléfono y entran al cuestionario.
+### 2) Flujo en la sala
+Abre la raíz `https://autodiagnosticos-jm.web.app/` en el PC del docente, inicia sesión,
+crea la evaluación (colegio + fecha) y proyecta el **QR** (botón **«Pantalla completa»**).
+Los docentes lo escanean con la cámara del teléfono y responden.
 
 ---
 
 ## Resultados en la web (con Firebase)
 
 El proyecto ya viene con **Firebase** configurado en `config.js` (proyecto
-`autodiagnosticos-jm`). Con Firebase, el tablero (`dashboard.html`) muestra los resultados
+`autodiagnosticos-jm`). Con Firebase, el panel (paso 4) muestra los resultados
 de **toda la sala EN VIVO**: se actualizan solos cada vez que un docente termina. Todo es
 anónimo (solo puntajes).
 
@@ -67,8 +69,8 @@ Falta activar la base de datos y sus reglas en la consola de Firebase (una sola 
    - Modo: **producción** · elige la región más cercana (p. ej. `nam5` / EE. UU.).
 3. Pestaña **Reglas**: borra lo que haya, pega el contenido de **`firestore.rules`** y pulsa
    **Publicar**.
-4. ¡Listo! Publica la web (GitHub Pages) y prueba: responde el cuestionario y verás la
-   respuesta aparecer sola en `dashboard.html`. Los datos quedan en tu Firestore, en la
+4. ¡Listo! Publica la web y prueba: crea una evaluación, escanea el QR, responde, y verás la
+   respuesta aparecer sola en el paso **Resultados**. Los datos quedan en tu Firestore, en la
    colección `resultados`.
 
 > El `apiKey` de Firebase **no es un secreto**: identifica al proyecto y está pensado para ir
@@ -109,16 +111,17 @@ Edita `config.js`:
 - `defaultColegio` — colegio por defecto (también puedes escribirlo en el tablero).
 - `backendUrl` — solo si usas la alternativa de Apps Script en vez de Firebase.
 
-### El panel del docente (`dashboard.html`)
+### El panel del docente (la raíz `/`, `index.html`)
 
-Pensado para la pantalla del PC del docente, es un asistente de **4 pasos**:
+Es lo primero que aparece al entrar a la web. Pensado para la pantalla del PC del docente,
+es un asistente de **4 pasos**:
 
 1. **Acceso** — contraseña (`facilitatorPassword`). Es una barrera ligera del lado del
    cliente (mantiene fuera a curiosos), no cifrado fuerte; como los datos son anónimos, es
    suficiente para el taller. Para protección real se puede añadir Firebase Auth y restringir
    la lectura por reglas.
 2. **Colegio + fecha** — escribes el colegio y la fecha; con eso se **crea la evaluación**.
-   Colegio y fecha se incrustan en el QR (`index.html?colegio=…&fecha=…`), así **cada
+   Colegio y fecha se incrustan en el QR (`encuesta.html?colegio=…&fecha=…`), así **cada
    respuesta queda etiquetada** con esa evaluación.
 3. **QR** — el código para proyectar en la sala (con pantalla completa e impresión).
 4. **Resultados** — en vivo, **solo de esa evaluación** (con opción de incluir todas las
