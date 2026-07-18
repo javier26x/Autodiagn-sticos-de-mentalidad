@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tablero del facilitador · Autodiagnósticos de mentalidad</title>
+  <meta name="theme-color" content="#46178f" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffce00'/%3E%3Ctext x='50' y='72' font-size='62' text-anchor='middle' font-family='Arial' font-weight='bold' fill='%232d0e63'%3E%CF%88%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="dot">JM</span> JUMP Math · Tablero</div>
+      <div class="meta noprint"><a class="linkbtn" href="index.html" style="color:#fff;opacity:.85">Ir al cuestionario →</a></div>
+    </header>
+    <main class="wrap">
+
+      <div class="card">
+        <div class="eyebrow">Proyecta esto en la sala</div>
+        <h1 style="margin:6px 0 12px">Escanea para responder</h1>
+        <div class="qr-panel">
+          <div class="qr-box" id="qrBox" aria-label="Código QR del cuestionario"></div>
+          <div>
+            <p class="lead" style="margin:0 0 8px">Cada docente escanea el código con la cámara de su teléfono y abre el cuestionario.</p>
+            <span class="qr-url" id="qrUrl">…</span>
+            <div class="btn-row noprint" style="margin-top:14px">
+              <button class="btn btn--primary small" id="copyBtn" style="flex:0 0 auto">Copiar enlace</button>
+              <button class="btn btn--yellow small" id="fsBtn" style="flex:0 0 auto">Pantalla completa</button>
+              <button class="btn btn--ghost small" id="printBtn" style="flex:0 0 auto;color:#4b2a90;border-color:#d7cdf0">Imprimir QR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <h2 style="margin:0">Resultados en vivo</h2>
+          <button class="btn btn--dark small noprint" id="refreshBtn" style="width:auto">Actualizar</button>
+        </div>
+        <p class="muted" id="sourceNote" style="margin:6px 0 0"></p>
+        <div id="results"></div>
+      </div>
+
+      <p class="fineprint center" style="color:#e8dcff">Los resultados son anónimos y agregados. Ningún dato individual identifica a un docente.</p>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="assets/quiz-data.js"></script>
+  <script src="assets/vendor/qrcode.js"></script>
+  <script src="assets/dashboard.js"></script>
+</body>
+</html>
