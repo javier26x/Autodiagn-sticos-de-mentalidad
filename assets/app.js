@@ -357,10 +357,16 @@
       localStorage.setItem(LOCAL_RESULTS_KEY, JSON.stringify(arr));
     } catch (e) {}
 
-    // 2) Si hay backend configurado: enviar al agregado en la nube.
-    if (CFG.backendUrl) {
+    // 2) Enviar al agregado en la nube, según lo configurado.
+    if (window.CLOUD && window.CLOUD.enabled) {
+      // Firebase ya está listo.
+      window.CLOUD.submit(payload).catch(function () {});
+    } else if (CFG.firebase && CFG.firebase.projectId) {
+      // Firebase configurado pero aún cargando: se encola y firebase.js lo envía.
+      (window.__PENDING_SUBMITS__ = window.__PENDING_SUBMITS__ || []).push(payload);
+    } else if (CFG.backendUrl) {
+      // Alternativa: backend REST (Google Apps Script). text/plain evita el preflight CORS.
       try {
-        // text/plain evita el preflight CORS con Google Apps Script.
         fetch(CFG.backendUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },

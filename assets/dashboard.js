@@ -175,28 +175,61 @@
     catch (e) { return []; }
   }
 
-  function load() {
-    if (CFG.backendUrl) {
-      sourceNote.textContent = 'Fuente: nube (Google Sheet) · se actualiza al pulsar «Actualizar».';
-      resultsEl.innerHTML = '<p class="muted">Cargando resultados…</p>';
-      var sep = CFG.backendUrl.indexOf('?') >= 0 ? '&' : '?';
-      fetch(CFG.backendUrl + sep + 'action=summary', { method: 'GET' })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var rows = (data && data.results) ? data.results : (Array.isArray(data) ? data : []);
-          renderStats(rows);
-        })
-        .catch(function () {
-          sourceNote.textContent = 'No se pudo leer la nube. Mostrando solo lo guardado en este dispositivo.';
-          renderStats(localRows());
-        });
-    } else {
-      sourceNote.textContent = 'Sin backend configurado: se muestran solo las respuestas hechas en ESTE dispositivo. ' +
-        'Para juntar los resultados de todos, configura backendUrl en config.js (ver README).';
-      renderStats(localRows());
+  var cloudUnsub = null;
+
+  function useCloudLive() {
+    sourceNote.textContent = 'Fuente: Firebase · resultados EN VIVO (se actualizan solos).';
+    if (cloudUnsub) { try { cloudUnsub(); } catch (e) {} cloudUnsub = null; }
+    try {
+      cloudUnsub = window.CLOUD.subscribe(function (rows) { renderStats(rows); });
+    } catch (e) {
+      window.CLOUD.fetchAll().then(renderStats).catch(function () { renderStats(localRows()); });
     }
   }
 
-  document.getElementById('refreshBtn').addEventListener('click', load);
+  function loadBackendRest() {
+    sourceNote.textContent = 'Fuente: nube (Google Sheet) · se actualiza al pulsar «Actualizar».';
+    resultsEl.innerHTML = '<p class="muted">Cargando resultados…</p>';
+    var sep = CFG.backendUrl.indexOf('?') >= 0 ? '&' : '?';
+    fetch(CFG.backendUrl + sep + 'action=summary', { method: 'GET' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var rows = (data && data.results) ? data.results : (Array.isArray(data) ? data : []);
+        renderStats(rows);
+      })
+      .catch(function () {
+        sourceNote.textContent = 'No se pudo leer la nube. Mostrando solo lo de este dispositivo.';
+        renderStats(localRows());
+      });
+  }
+
+  function load() {
+    // 1) Firebase (preferido).
+    if (window.CLOUD && window.CLOUD.enabled) { useCloudLive(); return; }
+    if (CFG.firebase && CFG.firebase.projectId) {
+      sourceNote.textContent = 'Conectando con Firebase…';
+      resultsEl.innerHTML = '<p class="muted">Conectando…</p>';
+      window.addEventListener('cloud-ready', useCloudLive, { once: true });
+      window.addEventListener('cloud-failed', function () {
+        sourceNote.textContent = 'No se pudo conectar con Firebase. Revisa la configuración y las reglas de Firestore (ver README). Mostrando solo lo de este dispositivo.';
+        renderStats(localRows());
+      }, { once: true });
+      return;
+    }
+    // 2) Backend REST alternativo (Apps Script).
+    if (CFG.backendUrl) { loadBackendRest(); return; }
+    // 3) Sin nube: solo este dispositivo.
+    sourceNote.textContent = 'Sin nube configurada: se muestran solo las respuestas hechas en ESTE dispositivo. ' +
+      'Configura Firebase en config.js para juntar los de todos (ver README).';
+    renderStats(localRows());
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', function () {
+    if (window.CLOUD && window.CLOUD.enabled) {
+      window.CLOUD.fetchAll().then(renderStats).catch(function () {});
+    } else {
+      load();
+    }
+  });
   load();
 })();

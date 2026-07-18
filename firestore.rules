@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Reglas de seguridad para el autodiagnóstico de mentalidad.
+// Cópialas en:  Consola de Firebase ▸ Firestore Database ▸ Reglas ▸ Publicar.
+//
+// Permiten a cualquiera:
+//   · CREAR un resultado anónimo válido (puntajes dentro de 8..48).
+//   · LEER los resultados (para el tablero en vivo).
+// No permiten modificar ni borrar nada.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /resultados/{doc} {
+      allow read: if true;
+
+      allow create: if request.resource.data.m1 is number
+                    && request.resource.data.m2 is number
+                    && request.resource.data.m1 >= 8 && request.resource.data.m1 <= 48
+                    && request.resource.data.m2 >= 8 && request.resource.data.m2 <= 48;
+
+      allow update, delete: if false;
+    }
+  }
+}

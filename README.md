@@ -20,9 +20,10 @@ Dweck (8 ítems), en la adaptación al español de Correa-Rojas, Grimaldo y Marc
 |---|---|
 | `index.html` | El cuestionario para los docentes (Momento 1 → teoría → Momento 2 → resultado). |
 | `dashboard.html` | Tablero del facilitador: **QR grande para proyectar** + resultados agregados. |
-| `config.js` | **Lo único que necesitas editar.** Nombre del evento y (opcional) la nube. |
-| `apps-script.gs` | Backend gratis para juntar los resultados de todos en una Hoja de Google. |
-| `assets/` | Estilos, lógica y la imagen `qr-cuestionario.png` (por si prefieres imprimirla). |
+| `config.js` | **Lo único que necesitas editar.** Nombre del evento y configuración de Firebase. |
+| `firestore.rules` | Reglas de seguridad para pegar en la consola de Firebase (una vez). |
+| `apps-script.gs` | Alternativa a Firebase: backend gratis con una Hoja de Google. |
+| `assets/` | Estilos, lógica, `firebase.js` y la imagen `qr-cuestionario.png` (por si la imprimes). |
 
 ---
 
@@ -44,26 +45,36 @@ Los docentes escanean con la cámara del teléfono y entran al cuestionario.
 
 ---
 
-## Resultados en la web (opcional pero recomendado)
+## Resultados en la web (con Firebase)
 
-Sin configurar nada, cada docente ve **su** resultado y el tablero muestra solo las
-respuestas hechas en **ese** dispositivo. Para juntar los resultados de **todos** en el
-tablero, activa la nube gratis con Google:
+El proyecto ya viene con **Firebase** configurado en `config.js` (proyecto
+`autodiagnosticos-jm`). Con Firebase, el tablero (`dashboard.html`) muestra los resultados
+de **toda la sala EN VIVO**: se actualizan solos cada vez que un docente termina. Todo es
+anónimo (solo puntajes).
 
-1. Crea una **Hoja de cálculo** en <https://sheets.google.com> (vacía).
-2. Menú **Extensiones ▸ Apps Script**.
-3. Borra lo que haya y pega **todo** el contenido de `apps-script.gs`.
-4. **Implementar ▸ Nueva implementación ▸ Aplicación web**
-   - *Ejecutar como:* **Yo**
-   - *Quién tiene acceso:* **Cualquier usuario**
-5. Copia la URL que termina en **`/exec`**.
-6. Pégala en `config.js`:
-   ```js
-   backendUrl: 'https://script.google.com/macros/s/XXXXXXXX/exec',
-   ```
-7. Guarda y vuelve a publicar (haz commit del cambio). Ahora `dashboard.html` muestra los
-   promedios, la distribución por bandas y el sondeo por sexo de **toda** la sala, y los
-   resultados quedan además en tu Hoja de Google.
+Falta activar la base de datos y sus reglas en la consola de Firebase (una sola vez):
+
+1. Entra a <https://console.firebase.google.com/> y abre el proyecto **autodiagnosticos-jm**.
+2. Menú **Compilación ▸ Firestore Database ▸ Crear base de datos**.
+   - Modo: **producción** · elige la región más cercana (p. ej. `nam5` / EE. UU.).
+3. Pestaña **Reglas**: borra lo que haya, pega el contenido de **`firestore.rules`** y pulsa
+   **Publicar**.
+4. ¡Listo! Publica la web (GitHub Pages) y prueba: responde el cuestionario y verás la
+   respuesta aparecer sola en `dashboard.html`. Los datos quedan en tu Firestore, en la
+   colección `resultados`.
+
+> El `apiKey` de Firebase **no es un secreto**: identifica al proyecto y está pensado para ir
+> en el navegador. La seguridad la dan las **reglas de Firestore** (`firestore.rules`), que
+> solo permiten crear puntajes válidos y leerlos, nunca modificarlos ni borrarlos.
+
+### ¿Prefieres no usar Firebase?
+
+Borra (o deja vacío) el bloque `firebase` en `config.js` y tienes dos opciones:
+- **Nada**: cada docente ve su resultado y el tablero muestra solo lo de ese dispositivo.
+- **Google Apps Script** (alternativa gratis con una Hoja de Google): pega `apps-script.gs`
+  en Extensiones ▸ Apps Script de una hoja nueva, publícalo como *Aplicación web*
+  (*Ejecutar como: Yo*, *Acceso: Cualquier usuario*) y pon su URL `/exec` en
+  `config.js ▸ backendUrl`.
 
 ---
 
@@ -84,8 +95,9 @@ frecuente es descubrir una mentalidad más fija en matemáticas que en general.
 
 Edita `config.js`:
 - `eventName` — el nombre que aparece en la portada y el tablero.
-- `backendUrl` — la URL de Apps Script (déjala en `''` para no usar nube).
+- `firebase` — la configuración de tu proyecto de Firebase (déjala si usas la nube).
 - `askSex` — `true`/`false` para pedir (o no) el sexo docente del sondeo anónimo.
+- `backendUrl` — solo si usas la alternativa de Apps Script en vez de Firebase.
 
 Los textos del instrumento están en `assets/quiz-data.js` por si necesitas ajustarlos.
 

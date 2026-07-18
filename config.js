@@ -8,22 +8,36 @@ window.QUIZ_CONFIG = {
   // Nombre del evento (aparece en la portada y el tablero).
   eventName: 'JUMP Math · Jornada de Mentalidades · Taller 1',
 
-  // ---------------------------------------------------------------------------
-  // RESULTADOS AGREGADOS "EN LA WEB" (opcional).
-  //
-  // Deja backendUrl en "" y la web funciona igual: cada docente ve su propio
-  // resultado y la comparación entre momentos. No se envía ni guarda nada fuera
-  // de su teléfono.
-  //
-  // Si quieres ver TODOS los resultados juntos en el tablero (dashboard.html),
-  // pega aquí la URL de tu Google Apps Script (termina en /exec). El paso a paso
-  // está en el README.md, sección "Resultados en la web".
-  // ---------------------------------------------------------------------------
-  backendUrl: '',
-
   // Preguntar el sexo docente (anónimo) para el sondeo agregado.
   // La validación del instrumento demostró invarianza de medición por sexo, lo
   // que hace legítimo un sondeo agregado y anónimo. Los resultados individuales
   // siguen siendo confidenciales. Pon false para no preguntarlo.
-  askSex: true
+  askSex: true,
+
+  // ---------------------------------------------------------------------------
+  // RESULTADOS "EN LA WEB" con Firebase (recomendado).
+  //
+  // Con esto, el tablero (dashboard.html) muestra los resultados de TODA la sala
+  // EN VIVO (se actualizan solos cada vez que un docente termina). Los datos son
+  // anónimos (solo puntajes) y quedan en tu proyecto de Firebase.
+  //
+  // Falta un paso en la consola de Firebase: crear la base de datos Firestore y
+  // publicar las reglas de seguridad. Ver README.md -> "Resultados en la web".
+  // ---------------------------------------------------------------------------
+  firebase: {
+    apiKey: 'AIzaSyCtx37kYkImpiWuLr7-f-B4uVwyoxLb2bc',
+    authDomain: 'autodiagnosticos-jm.firebaseapp.com',
+    projectId: 'autodiagnosticos-jm',
+    storageBucket: 'autodiagnosticos-jm.firebasestorage.app',
+    messagingSenderId: '725486463476',
+    appId: '1:725486463476:web:ac1afa42ac937e9dbe31a1'
+  },
+  firebaseCollection: 'resultados', // nombre de la colección en Firestore
+  firebaseVersion: '10.12.2',       // versión del SDK de Firebase (CDN)
+
+  // ---------------------------------------------------------------------------
+  // Alternativa a Firebase: un backend REST (p. ej. Google Apps Script).
+  // Solo se usa si NO hay firebase.projectId arriba. Ver apps-script.gs.
+  // ---------------------------------------------------------------------------
+  backendUrl: ''
 };
