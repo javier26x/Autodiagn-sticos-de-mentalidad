@@ -39,6 +39,14 @@ Dweck (8 ítems), en la adaptación al español de Correa-Rojas, Grimaldo y Marc
 Con esto ya funciona: cada docente responde y ve su propio resultado y su comparación.
 El **QR del tablero se genera solo** apuntando a tu web, así que siempre es correcto.
 
+**Alternativa — Firebase Hosting** (todo bajo Firebase). En una terminal o en Cloud Shell,
+dentro de la carpeta del proyecto:
+```bash
+firebase use autodiagnosticos-jm
+firebase deploy --only hosting
+```
+Tu web quedará en `https://autodiagnosticos-jm.web.app/` (el QR del tablero se ajusta solo).
+
 ### 2) Muestra el QR en la sala
 Abre `…/dashboard.html`, proyéctalo y pulsa **«Pantalla completa»**.
 Los docentes escanean con la cámara del teléfono y entran al cuestionario.
