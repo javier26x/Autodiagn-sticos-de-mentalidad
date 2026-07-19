@@ -454,28 +454,6 @@
 
   function isLive() { return !!(window.CLOUD && window.CLOUD.enabled); }
 
-  // Lectura en palabras simples del resultado agregado de la sala.
-  function roomReading(st) {
-    var b1 = Q.bandFor(st.m1avg).id;
-    var nivel = b1 === 'fija' ? 'tiende a lo fijo' : b1 === 'mixta' ? 'está en transición' : 'tiende al crecimiento';
-    var gap = st.gapavg, head, body;
-    if (gap <= -3) {
-      head = 'La sala es más “fija” con las matemáticas';
-      body = 'En general el grupo ' + nivel + ', pero con las matemáticas la mentalidad baja ' +
-        Math.abs(gap).toFixed(1) + ' puntos: el ' + st.mathLowerPct +
-        '% se siente más “fijo” con las mates que con el resto. Ese es el foco del taller, y la mentalidad se puede cultivar.';
-    } else if (gap >= 3) {
-      head = 'La sala es más “de crecimiento” con las matemáticas';
-      body = 'En general el grupo ' + nivel + ', y con las matemáticas su mentalidad es aún más de crecimiento (+' +
-        gap.toFixed(1) + ' puntos). Es poco frecuente: vale la pena conversar por qué.';
-    } else {
-      head = 'Mentalidad parecida en ambos terrenos';
-      body = 'En general el grupo ' + nivel + ', y ve las matemáticas de forma muy parecida (brecha de ' +
-        (gap > 0 ? '+' : '') + gap.toFixed(1) + ' puntos). La meta del taller es reforzar la mirada de crecimiento.';
-    }
-    return { head: head, body: body, small: st.n < 3 };
-  }
-
   function statTile(k, key, to, dec, opts) {
     opts = opts || {};
     var initial = (opts.pre && to > 0 ? '+' : '') + Number(to).toFixed(dec);
@@ -502,17 +480,8 @@
       return;
     }
     var st = computeStats(rows);
-    var rd = roomReading(st);
     resultsEl.innerHTML = [
       liveHead,
-      '<div class="reading">',
-      '  <div class="reading-icon">🧭</div>',
-      '  <div>',
-      '    <div class="reading-h">Lectura rápida · ' + esc(rd.head) + '</div>',
-      '    <p>' + esc(rd.body) + '</p>',
-      (rd.small ? '    <p class="reading-note">Aún pocas respuestas: la lectura se afina cuando terminen más docentes.</p>' : ''),
-      '  </div>',
-      '</div>',
       '<div class="stats">',
       statTile('Respuestas', 'n', st.n, 0),
       statTile('Promedio Momento 1', 'm1', +st.m1avg.toFixed(1), 1, { suffix: '<small> / 48</small>' }),

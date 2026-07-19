@@ -381,17 +381,6 @@ body.panel-wide .wrap { max-width: 1180px; }
 .dash-block + .dash-block { margin-top: 20px; }
 .dash-h { font-size: 1.02rem; margin: 0 0 8px; }
 
-/* Lectura rápida (interpretación en palabras simples). */
-.reading {
-  display: flex; gap: 14px; align-items: flex-start;
-  background: #eef7f4; border: 1px solid #cfe9e0; border-left: 5px solid var(--green);
-  border-radius: 14px; padding: 14px 16px; margin: 6px 0 4px;
-}
-.reading-icon { font-size: 1.55rem; line-height: 1.1; flex: 0 0 auto; }
-.reading-h { font-weight: 900; color: var(--green-deep); font-size: 1rem; margin-bottom: 4px; }
-.reading p { margin: 0; color: var(--ink); line-height: 1.5; font-size: 0.95rem; }
-.reading .reading-note { color: var(--muted); font-size: 0.82rem; margin-top: 5px; }
-
 .res-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .res-title { margin: 0; font-size: 1.4rem; }
 .res-subbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 8px 0 2px; }
@@ -420,15 +409,9 @@ body.panel-wide .wrap { max-width: 1180px; }
   body.panel-wide .wizard-nav .btn { padding: 10px 16px; }
   body.panel-wide table.log th, body.panel-wide table.log td { padding: 6px 8px; }
 
-  /* Lectura rápida compacta en modo ancho. */
-  body.panel-wide .reading { padding: 10px 15px; margin: 4px 0 2px; }
-  body.panel-wide .reading p { font-size: 0.9rem; line-height: 1.42; }
-  body.panel-wide .reading-h { font-size: 0.95rem; margin-bottom: 3px; }
-  body.panel-wide .reading-icon { font-size: 1.3rem; }
-  body.panel-wide .stat .v { font-size: 1.45rem; }
-  body.panel-wide .stat { padding: 9px 12px; }
-  body.panel-wide .stat .k { font-size: 0.7rem; letter-spacing: 0.3px; }
-  body.panel-wide .gauge-scale { margin-top: 4px; font-size: 0.7rem; }
+  body.panel-wide .stat .v { font-size: 1.55rem; }
+  body.panel-wide .stat { padding: 11px 13px; }
+  body.panel-wide .stat .k { font-size: 0.72rem; }
 }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 6px; }
