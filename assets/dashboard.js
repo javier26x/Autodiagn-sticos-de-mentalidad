@@ -299,23 +299,25 @@
     var node = h([
       '<div class="view">',
       '  <div class="eval-chip">🏫 ' + esc(evaluation.colegio) + ' · 📅 ' + esc(fmtDate(evaluation.fecha)) + '</div>',
-      '  <div class="card" style="margin-top:12px">',
-      '    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">',
-      '      <h1 style="margin:0;font-size:1.5rem">Paso 4 · Resultados</h1>',
+      '  <div class="card res-card" style="margin-top:10px">',
+      '    <div class="res-topbar">',
+      '      <h1 class="res-title">Resultados</h1>',
       '      <div class="btn-row noprint" style="margin:0">',
       '        <button class="btn btn--yellow small" id="qrMini" style="flex:0 0 auto">Mostrar QR</button>',
       '        <button class="btn btn--dark small" id="refreshBtn" style="flex:0 0 auto">Actualizar</button>',
       '      </div>',
       '    </div>',
-      '    <label class="allDates noprint"><input type="checkbox" id="allDates"' + (includeAllDates ? ' checked' : '') + ' /> Incluir todas las fechas de este colegio</label>',
-      '    <p class="muted" id="sourceNote" style="margin:6px 0 0"></p>',
+      '    <div class="res-subbar noprint">',
+      '      <label class="allDates" style="margin:0"><input type="checkbox" id="allDates"' + (includeAllDates ? ' checked' : '') + ' /> Incluir todas las fechas del colegio</label>',
+      '      <span class="muted" id="sourceNote" style="font-size:.76rem"></span>',
+      '    </div>',
       '    <div id="results"></div>',
       '  </div>',
       '  <div class="btn-row wizard-nav" style="margin-top:16px">',
       '    <button class="btn btn--ghost" id="backQR" style="flex:0 0 auto;color:#fff;border-color:rgba(255,255,255,.5)">◀ Volver al QR</button>',
       '    <button class="btn btn--ghost" id="newEval" style="flex:0 0 auto;color:#fff;border-color:rgba(255,255,255,.5)">Nueva evaluación</button>',
       '  </div>',
-      '  <p class="fineprint center" style="color:#cfe8e0;margin-top:12px">Los resultados son anónimos y agregados. Ningún dato individual identifica a un docente.</p>',
+      '  <p class="fineprint center hide-wide" style="color:#cfe8e0;margin-top:12px">Los resultados son anónimos y agregados. Ningún dato individual identifica a un docente.</p>',
       '</div>'
     ].join(''));
     stepRoot.innerHTML = '';
@@ -443,8 +445,8 @@
         '</td><td>' + num(g.s2 / g.n, 1) + '</td><td><b>' + (g.g / g.n >= 0 ? '+' : '') + num(g.g / g.n, 1) + '</b></td></tr>';
     }).join('');
     return [
-      '<h2 style="margin:22px 0 6px">Sondeo agregado por sexo</h2>',
-      '<p class="fineprint" style="margin-top:0">Legítimo porque la escala demostró invarianza de medición por sexo. Anónimo y agregado.</p>',
+      '<h2 class="dash-h">Sondeo agregado por sexo</h2>',
+      '<p class="fineprint" style="margin:0 0 8px">Legítimo porque la escala demostró invarianza de medición por sexo. Anónimo y agregado.</p>',
       '<table class="log"><thead><tr><th class="txt">Grupo</th><th>N</th><th>Prom. M1</th><th>Prom. M2</th><th>Brecha</th></tr></thead>',
       '<tbody>' + rows + '</tbody></table>'
     ].join('');
@@ -486,20 +488,31 @@
       statTile('Brecha promedio (M2−M1)', 'gap', +st.gapavg.toFixed(1), 1, { pre: true }),
       statTile('Más “fijos” en mates', 'ml', st.mathLowerPct, 0, { suffix: '<small>%</small>' }),
       '</div>',
-      '<h2 style="font-size:1.05rem;margin:22px 0 6px">Promedio de la sala en la escala</h2>',
-      '<div class="gauge" style="margin-top:20px"><div class="gauge-track">',
-      '  <div class="gauge-mark blue" style="left:' + gaugePct(st.m1avg) + '%" data-label="M1"></div>',
-      '  <div class="gauge-mark green" style="left:' + gaugePct(st.m2avg) + '%" data-label="M2"></div>',
-      '</div><div class="gauge-scale"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div></div>',
-      '<h2 style="font-size:1.05rem;margin:24px 0 8px">Distribución por bandas</h2>',
+      // Cuerpo en dos columnas para caber en una sola pantalla (se apila en móvil).
+      '<div class="dash-cols">',
+      '  <div class="dash-col">',
+      '    <div class="dash-block">',
+      '      <h2 class="dash-h">Promedio de la sala en la escala</h2>',
+      '      <div class="gauge" style="margin-top:20px"><div class="gauge-track">',
+      '        <div class="gauge-mark blue" style="left:' + gaugePct(st.m1avg) + '%" data-label="M1"></div>',
+      '        <div class="gauge-mark green" style="left:' + gaugePct(st.m2avg) + '%" data-label="M2"></div>',
+      '      </div><div class="gauge-scale"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div></div>',
+      '    </div>',
+      '    <div class="dash-block">',
+      '      <h2 class="dash-h">Distribución por bandas</h2>',
       legendHTML(),
-      '<div class="stack-block">',
-      '  <div class="stack-label"><span class="mchip blue">M1</span> En general</div>',
+      '      <div class="stack-block">',
+      '        <div class="stack-label"><span class="mchip blue">M1</span> En general</div>',
       stackBar(st.dist1, st.n, 'M1 · en general'),
-      '  <div class="stack-label"><span class="mchip green">M2</span> En matemáticas</div>',
+      '        <div class="stack-label"><span class="mchip green">M2</span> En matemáticas</div>',
       stackBar(st.dist2, st.n, 'M2 · en matemáticas'),
-      '</div>',
-      (CFG.askSex !== false ? sexTable(st.bySex) : '')
+      '      </div>',
+      '    </div>',
+      '  </div>',
+      (CFG.askSex !== false
+        ? '  <div class="dash-col"><div class="dash-block">' + sexTable(st.bySex) + '</div></div>'
+        : ''),
+      '</div>'
     ].join('');
     animateNums(resultsEl);
     attachTips(resultsEl);
@@ -576,6 +589,8 @@
   // Router de pasos
   // =========================================================================
   function renderStep() {
+    // Solo el paso de Resultados usa todo el ancho (para caber sin scroll).
+    document.body.classList.toggle('panel-wide', current === 'resultados');
     switch (current) {
       case 'login': renderLogin(); break;
       case 'colegio': renderColegio(); break;

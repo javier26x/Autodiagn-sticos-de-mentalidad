@@ -374,6 +374,42 @@ table.log td.txt { text-align: left; color: var(--ink-soft); }
   display: inline-block;
 }
 
+/* --- Resultados a lo ancho (paso 4): caber en una pantalla ---------------- */
+body.panel-wide .wrap { max-width: 1180px; }
+
+.dash-cols { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 16px; }
+.dash-block + .dash-block { margin-top: 20px; }
+.dash-h { font-size: 1.02rem; margin: 0 0 8px; }
+
+.res-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.res-title { margin: 0; font-size: 1.4rem; }
+.res-subbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 8px 0 2px; }
+
+@media (min-width: 900px) {
+  .dash-cols { grid-template-columns: 1.35fr 1fr; gap: 34px; align-items: start; }
+
+  /* Modo compacto: todo cabe en una pantalla de laptop sin scroll. */
+  body.panel-wide .hide-wide { display: none; }
+  body.panel-wide .stepper { margin: 4px 0 10px; }
+  body.panel-wide .eval-chip { padding: 7px 14px; font-size: 0.85rem; }
+  body.panel-wide .res-card { padding: 16px 22px; }
+  body.panel-wide .res-title { font-size: 1.25rem; }
+  body.panel-wide .stats { grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 6px; }
+  body.panel-wide .stat { padding: 11px 13px; }
+  body.panel-wide .stat .v { font-size: 1.6rem; }
+  body.panel-wide .stat .k { font-size: 0.72rem; }
+  body.panel-wide .dash-cols { margin-top: 12px; gap: 30px; }
+  body.panel-wide .dash-block + .dash-block { margin-top: 14px; }
+  body.panel-wide .dash-h { font-size: 0.98rem; margin-bottom: 6px; }
+  body.panel-wide .gauge { margin: 12px 0 4px !important; }
+  body.panel-wide .stackbar { height: 30px; }
+  body.panel-wide .stack-label { margin: 9px 0 5px; }
+  body.panel-wide .results-head { margin: 0 0 8px; }
+  body.panel-wide .wizard-nav { margin-top: 12px !important; }
+  body.panel-wide .wizard-nav .btn { padding: 10px 16px; }
+  body.panel-wide table.log th, body.panel-wide table.log td { padding: 6px 8px; }
+}
+
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 6px; }
 .stat {
   background: #f4f9f8; border: 1px solid var(--line); border-radius: 16px; padding: 16px;
