@@ -91,45 +91,39 @@
   function renderIntro() {
     var askSex = CFG.askSex !== false;
     var sexBlock = askSex ? [
-      '<div class="card">',
-      '  <div class="eyebrow">Sondeo anónimo (opcional)</div>',
-      '  <h2 style="margin-top:6px">¿Cómo te identificas?</h2>',
-      '  <p style="margin:0 0 10px">Solo para un conteo agregado y anónimo. Puedes omitirlo.</p>',
-      '  <div class="chips" id="sexChips">',
+      '  <div class="eyebrow">¿Cómo te identificas? · opcional y anónimo</div>',
+      '  <div class="chips" id="sexChips" style="margin:8px 0 16px">',
       '    <button class="chip" data-sex="F" aria-pressed="false">Mujer</button>',
       '    <button class="chip" data-sex="M" aria-pressed="false">Hombre</button>',
       '    <button class="chip" data-sex="X" aria-pressed="false">Prefiero no decir</button>',
-      '  </div>',
-      '</div>'
+      '  </div>'
     ].join('') : '';
 
     var schoolTag = state.colegio
-      ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#e8f5f0;color:#0a6b52;border-radius:999px;padding:6px 12px;font-weight:800;font-size:.82rem;margin-bottom:10px">🏫 ' + esc(state.colegio) + '</div>'
+      ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#e8f5f0;color:#0a6b52;border-radius:999px;padding:6px 12px;font-weight:800;font-size:.82rem;margin-bottom:8px">🏫 ' + esc(state.colegio) + '</div>'
       : '';
 
     var node = h([
       '<div>',
       '  <div class="card">',
       '    ' + schoolTag,
-      '    <div class="eyebrow">' + esc(CFG.eventName || 'JUMP Math · Jornada de Mentalidades') + '</div>',
-      '    <h1>Autodiagnósticos de mentalidad</h1>',
-      '    <p class="lead">Dos breves reflexiones personales para descubrir cómo ves la inteligencia… y cómo ves las matemáticas. El corazón de la actividad es <b>comparar ambas</b>.</p>',
-      '    <div class="pill-row">',
+      '    <h1 style="margin-top:2px">Autodiagnósticos de mentalidad</h1>',
+      '    <p class="lead" style="margin:6px 0 10px">Descubre cómo ves la inteligencia… y cómo ves las matemáticas. Lo importante: <b>comparar ambas</b>.</p>',
+      '    <div class="pill-row" style="margin:0 0 18px">',
       '      <span class="pill">' + ICONS.lock + ' Anónimo</span>',
-      '      <span class="pill">' + ICONS.eye + ' Confidencial</span>',
       '      <span class="pill">' + ICONS.scale + ' 8 + 8 preguntas · ~4 min</span>',
       '    </div>',
-      '  </div>',
       sexBlock,
-      '  <div class="card">',
-      '    <h2>Cómo funciona</h2>',
-      '    <p style="margin:0 0 6px"><b>1.</b> Ahora respondes el <b>Momento 1</b> (mentalidad en general).</p>',
-      '    <p style="margin:0 0 6px"><b>2.</b> Sigue la teoría de mentalidades del taller.</p>',
-      '    <p style="margin:0 0 14px"><b>3.</b> Vuelves y respondes el <b>Momento 2</b> (mentalidad en matemáticas). Verás tu comparación.</p>',
       '    <button class="btn btn--primary" id="startBtn">Empezar el Momento 1 →</button>',
-      '    <p class="fineprint center" style="margin:14px 0 0">No se recoge tu nombre ni ningún dato personal. Todo queda en este dispositivo salvo un conteo agregado y anónimo.</p>',
+      '    <p class="fineprint center" style="margin:12px 0 0">No se recoge tu nombre ni ningún dato personal.</p>',
       '  </div>',
-      '  <p class="center noprint" style="margin-top:14px"><a class="linkbtn" href="index.html" style="color:#ffffff;opacity:.85">¿Eres docente? Entra al panel →</a></p>',
+      '  <div class="card">',
+      '    <h2 style="margin-bottom:4px">Cómo funciona</h2>',
+      '    <div class="step-row"><span class="sn">1</span><span>Respondes el <b>Momento 1</b> (tu mentalidad en general).</span></div>',
+      '    <div class="step-row"><span class="sn">2</span><span>Sigues la teoría de mentalidades del taller.</span></div>',
+      '    <div class="step-row"><span class="sn">3</span><span>Respondes el <b>Momento 2</b> (en matemáticas) y ves tu <b>comparación</b>.</span></div>',
+      '  </div>',
+      '  <p class="center noprint" style="margin-top:14px"><a class="linkbtn" href="index.html" style="color:#ffffff;opacity:.7;font-size:.85rem">¿Eres docente? Entra al panel →</a></p>',
       '</div>'
     ].join(''));
 
@@ -165,9 +159,9 @@
     var pct = Math.round((answered / total) * 100);
 
     var opts = Q.SCALE.map(function (s) {
-      var sel = answers[i] === s.value ? ' selected' : '';
+      var sel = answers[i] === s.value;
       return [
-        '<button class="opt s' + s.value + sel + '" data-val="' + s.value + '">',
+        '<button class="opt s' + s.value + (sel ? ' selected' : '') + '" data-val="' + s.value + '" aria-pressed="' + sel + '">',
         '  <span class="n">' + s.value + '</span>',
         '  <span class="lbl">' + esc(s.label) + '</span>',
         '</button>'
@@ -202,17 +196,23 @@
       '</div>'
     ].join(''));
 
+    var answered1 = false; // evita doble avance por doble toque
     node.querySelectorAll('.opt').forEach(function (b) {
       b.addEventListener('click', function () {
+        if (answered1) return;
+        answered1 = true;
         var val = parseInt(b.getAttribute('data-val'), 10);
         answers[i] = val;
         save();
         node.querySelectorAll('.opt').forEach(function (o) {
           o.classList.remove('selected');
+          o.setAttribute('aria-pressed', 'false');
           if (o !== b) o.classList.add('dim');
         });
         b.classList.add('selected');
-        setTimeout(advance, 260);
+        b.setAttribute('aria-pressed', 'true');
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+        setTimeout(advance, 300);
       });
     });
     var back = node.querySelector('#backBtn');
@@ -246,15 +246,15 @@
       '<div>',
       '  <div class="card center">',
       '    <div class="big-emoji">🧠</div>',
-      '    <div class="eyebrow" style="margin-top:8px">Momento 1 completado</div>',
-      '    <h1 style="margin:6px 0 4px">¡Listo tu punto de partida!</h1>',
+      '    <div class="eyebrow" style="margin-top:6px">Momento 1 completado</div>',
+      '    <h1 style="margin:6px 0 4px;font-size:1.6rem">¡Listo tu punto de partida!</h1>',
       '    <div class="score-chip"><span>Tu puntaje general:</span> <b>' + m1 + '</b><span>/ 48</span></div>',
       '    <p style="margin:6px 0 0"><b style="color:' + band.color + '">' + esc(band.name) + '</b><br>' + esc(band.reading) + '</p>',
       '  </div>',
       '  <div class="card">',
       '    <h2>Ahora viene la teoría 🎓</h2>',
-      '    <p>Guardamos tu Momento 1 en este dispositivo. Sigue la explicación de mentalidades del taller y, cuando el facilitador lo indique, vuelve aquí para el <b>Momento 2</b> (tu mentalidad en matemáticas).</p>',
-      '    <p class="fineprint">Puedes cerrar esta página: al volver a abrir el mismo enlace, retomas justo aquí.</p>',
+      '    <p style="margin:0 0 8px">Sigue la explicación del taller y, cuando el facilitador lo indique, continúa con el <b>Momento 2</b> (tu mentalidad en matemáticas).</p>',
+      '    <p class="fineprint" style="margin:0 0 14px">Tu Momento 1 queda guardado en este teléfono: puedes cerrar la página y retomar aquí.</p>',
       '    <button class="btn btn--yellow" id="toM2">Continuar al Momento 2 →</button>',
       '  </div>',
       '  <p class="center"><button class="linkbtn" id="resetBtn" style="color:#fff;opacity:.7">Empezar de nuevo</button></p>',

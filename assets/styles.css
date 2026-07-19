@@ -52,15 +52,24 @@ html, body {
 body {
   font-family: var(--font);
   color: var(--ink);
-  background:
-    radial-gradient(1200px 700px at 12% -8%, #0aa17e 0%, rgba(10, 161, 126, 0) 55%),
-    radial-gradient(1000px 620px at 108% 12%, #0091d5 0%, rgba(0, 145, 213, 0) 52%),
-    linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
-  background-attachment: fixed;
+  background: var(--navy-deep);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: contain;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Fondo en un pseudo-elemento fijo: background-attachment:fixed NO funciona en
+ * iOS/Android y dejaba la parte baja de las páginas largas en blanco. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 700px at 12% -8%, #0aa17e 0%, rgba(10, 161, 126, 0) 55%),
+    radial-gradient(1000px 620px at 108% 12%, #0091d5 0%, rgba(0, 145, 213, 0) 52%),
+    linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
 }
 
 /* Objetivos táctiles: sin retardo de 300ms, sin selección accidental. */
@@ -102,6 +111,7 @@ button, .chip, .opt, .btn, a.linkbtn {
   font-weight: 800;
   letter-spacing: 0.2px;
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 .brand .dot {
   width: 26px; height: 26px; border-radius: 8px;
@@ -110,7 +120,12 @@ button, .chip, .opt, .btn, a.linkbtn {
   box-shadow: var(--shadow-sm);
 }
 .topbar .meta { font-size: 0.8rem; opacity: 0.85; text-align: right; }
-.topbar .meta a { white-space: nowrap; }
+.topbar .meta a, .topbar .meta button { white-space: nowrap; }
+/* En móvil el nombre del evento duplica el de la tarjeta y parte la barra en
+ * dos líneas: se oculta (los botones tipo «Salir» sí se quedan). */
+@media (max-width: 560px) {
+  #eventMeta { display: none; }
+}
 
 /* --- Tarjetas ------------------------------------------------------------- */
 .card {
@@ -250,7 +265,18 @@ p { line-height: 1.55; color: var(--ink-soft); }
 .opt .lbl { line-height: 1.2; }
 .opt.selected { border-color: var(--green); background: #e8f5f0; }
 .opt.selected .n { background: var(--green); color: #fff; }
-.opt.dim { opacity: 0.5; }
+.opt.selected::after {
+  content: '✓'; margin-left: auto; font-weight: 900; font-size: 1.15rem;
+  color: var(--green); line-height: 1;
+}
+/* Atenuado sólido (nunca translúcido: sobre el fondo oscuro se veía turbio). */
+.opt.dim { background: #eef2f5; border-color: #eef2f5; color: #97a3b1; box-shadow: none; }
+.opt.dim .n { background: #e1e8ed; color: #97a3b1; }
+
+/* Foco visible con teclado (accesibilidad). */
+.btn:focus-visible, .opt:focus-visible, .chip:focus-visible, .linkbtn:focus-visible {
+  outline: 3px solid var(--gold); outline-offset: 2px;
+}
 
 .q-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
 
@@ -335,6 +361,7 @@ table.log td.txt { text-align: left; color: var(--ink-soft); }
   .qr-panel { grid-template-columns: 1fr; gap: 14px; }
   .qr-box { justify-self: center; }
   .qr-panel .btn-row { justify-content: flex-start; }
+  .qr-panel .btn-row .btn { flex: 1 1 45% !important; }
 }
 .qr-box {
   background: #fff; border-radius: 20px; padding: 16px; box-shadow: var(--shadow-sm);
@@ -433,6 +460,7 @@ table.log td.txt { text-align: left; color: var(--ink-soft); }
 
 @media print {
   body { background: #fff; }
+  body::before { display: none; }
   .noprint { display: none !important; }
   .card { box-shadow: none; border: 1px solid #ddd; }
 }
@@ -475,12 +503,17 @@ body.is-question .wrap { padding-top: calc(12px + env(safe-area-inset-top)); }
   .opt .n { width: 30px; height: 30px; font-size: 0.95rem; }
   .scale-hint { margin-bottom: 6px; }
   .progress-head { margin-bottom: 9px; }
+  .q-nav { margin-top: 10px; }
 }
 @media (max-height: 640px) {
-  .statement { min-height: 60px; padding: 14px 16px; }
+  .statement { min-height: 56px; padding: 13px 16px; margin: 8px 0 10px; }
   .statement p { font-size: 1.08rem; }
-  .opt { padding: 10px 12px; font-size: 0.92rem; }
-  .opt .n { width: 27px; height: 27px; }
+  .opt { padding: 9px 12px; font-size: 0.92rem; }
+  .opt .n { width: 26px; height: 26px; font-size: 0.85rem; }
+  .options { gap: 7px; }
+  .pbar { height: 8px; }
+  .q-nav { margin-top: 7px; }
+  body.is-question .wrap { padding-top: calc(8px + env(safe-area-inset-top)); padding-bottom: 12px; }
 }
 
 /* Teléfonos muy angostos: un poco menos de padding lateral en tarjetas. */
@@ -519,6 +552,28 @@ body.is-question .wrap { padding-top: calc(12px + env(safe-area-inset-top)); }
 .eval-chip {
   display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
   background: #e8f5f0; color: #0a6b52; border-radius: 999px; padding: 9px 16px; font-weight: 800; font-size: 0.9rem;
+}
+
+/* Navegación inferior del asistente: en móvil se apila (principal arriba). */
+@media (max-width: 560px) {
+  .wizard-nav { flex-direction: column-reverse; }
+  .wizard-nav .btn { width: 100%; flex: 1 1 auto !important; }
+}
+
+/* Pasos "Cómo funciona" compactos (intro de la encuesta). */
+.step-row {
+  display: flex; align-items: flex-start; gap: 11px;
+  margin: 10px 0; color: var(--ink-soft); line-height: 1.45; font-size: 0.95rem;
+}
+.step-row .sn {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; margin-top: 1px;
+  background: #e8f5f0; color: #0a6b52; display: grid; place-items: center;
+  font-weight: 900; font-size: 0.8rem;
+}
+
+/* Chips más compactos en pantallas angostas (caben los tres). */
+@media (max-width: 420px) {
+  .chip { padding: 11px 6px; font-size: 0.88rem; flex-basis: 90px; }
 }
 .allDates { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); cursor: pointer; }
 .allDates input { width: 16px; height: 16px; accent-color: var(--green); }
