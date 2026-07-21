@@ -14,6 +14,7 @@
   var LOCAL_RESULTS_KEY = 'jump-mindset-local-results-v1';
   var EVAL_KEY = 'jump-eval-v1';
   var EVAL_HISTORY_KEY = 'jump-eval-history-v1';
+  var EVAL_HIDDEN_KEY = 'jump-eval-hidden-v1';
   var AUTH_KEY = 'jump-facilitator-ok';
 
   var stepRoot = document.getElementById('stepRoot');
@@ -58,26 +59,40 @@
   }
   function pushHistory(ev) {
     if (!ev || !ev.colegio) return;
+    unhideEvaluation(ev); // crearla de nuevo la devuelve a la lista
     var hlist = loadHistory().filter(function (x) { return !(x.colegio === ev.colegio && x.fecha === ev.fecha); });
     hlist.unshift({ colegio: ev.colegio, fecha: ev.fecha });
     if (hlist.length > 40) hlist = hlist.slice(0, 40);
     try { localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(hlist)); } catch (e) {}
   }
-  // Colegios conocidos = historial local + colegios con respuestas en la nube.
-  function knownColegios() {
-    var set = {};
-    loadHistory().forEach(function (e) { var c = (e.colegio || '').trim(); if (c) set[c] = true; });
-    (allRows || []).forEach(function (r) { var c = (r.colegio || '').trim(); if (c) set[c] = true; });
-    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+  // "Ocultas": evaluaciones quitadas de la lista con la ×. Se guarda la clave
+  // colegio||fecha para que tampoco reaparezcan al venir de la nube.
+  function evalKey(colegio, fecha) { return (colegio || '') + '||' + (fecha || ''); }
+  function loadHidden() {
+    try { return JSON.parse(localStorage.getItem(EVAL_HIDDEN_KEY) || '[]'); } catch (e) { return []; }
   }
-  // Evaluaciones conocidas (colegio + fecha) para reabrir con un toque.
+  function hideEvaluation(ev) {
+    var k = evalKey(ev.colegio, ev.fecha);
+    var hid = loadHidden();
+    if (hid.indexOf(k) < 0) hid.push(k);
+    try { localStorage.setItem(EVAL_HIDDEN_KEY, JSON.stringify(hid)); } catch (e) {}
+    var hl = loadHistory().filter(function (x) { return evalKey(x.colegio, x.fecha) !== k; });
+    try { localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(hl)); } catch (e) {}
+  }
+  function unhideEvaluation(ev) {
+    var k = evalKey(ev.colegio, ev.fecha);
+    var hid = loadHidden().filter(function (x) { return x !== k; });
+    try { localStorage.setItem(EVAL_HIDDEN_KEY, JSON.stringify(hid)); } catch (e) {}
+  }
+  // Evaluaciones conocidas (colegio + fecha): historial local + nube, sin ocultas.
   function knownEvaluations() {
+    var hidden = loadHidden();
     var seen = {}, out = [];
     function add(colegio, fecha) {
       colegio = (colegio || '').trim();
       if (!colegio) return;
-      var k = colegio + '||' + (fecha || '');
-      if (seen[k]) return;
+      var k = evalKey(colegio, fecha || '');
+      if (seen[k] || hidden.indexOf(k) >= 0) return;
       seen[k] = true;
       out.push({ colegio: colegio, fecha: fecha || '' });
     }
@@ -198,23 +213,27 @@
   // =========================================================================
   var colegioSuggestFn = null; // permite refrescar las sugerencias cuando llega data
 
+  // Quita acentos/mayúsculas para filtrar ("martin" encuentra "Martín").
+  function norm(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  }
+
   function renderColegio() {
     var col = (evaluation && evaluation.colegio) || CFG.defaultColegio || '';
     var fecha = (evaluation && evaluation.fecha) || todayISO();
     var node = h([
       '<div class="view" style="max-width:560px;margin:0 auto">',
-      '  <div class="card">',
+      '  <div class="card" style="overflow:visible">',
       '    <div class="eyebrow">Paso 2 · Nueva evaluación</div>',
       '    <h1 style="margin:6px 0 4px;font-size:1.6rem">¿En qué colegio la aplicas?</h1>',
-      '    <p style="margin:0 0 12px">Elige un colegio que ya tiene evaluación o escribe uno nuevo. Se crea la evaluación para la fecha indicada.</p>',
-      '    <div class="field">',
+      '    <p style="margin:0 0 12px">Elige un colegio que ya tiene evaluación o escribe uno nuevo.</p>',
+      '    <div class="field combo">',
       '      <label for="colegioInput">Nombre del colegio</label>',
-      '      <input id="colegioInput" type="text" list="colegiosList" placeholder="Escribe o elige un colegio…" autocomplete="off" value="' + esc(col) + '" />',
-      '      <datalist id="colegiosList"></datalist>',
-      '    </div>',
-      '    <div id="recientesWrap" class="hidden">',
-      '      <div class="recent-label">Evaluaciones recientes · toca para reabrir</div>',
-      '      <div class="recent-chips" id="recientes"></div>',
+      '      <div class="combo-wrap">',
+      '        <input id="colegioInput" type="text" placeholder="Escribe o elige un colegio…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="comboPanel" value="' + esc(col) + '" />',
+      '        <button type="button" class="combo-toggle" id="comboToggle" aria-label="Ver colegios con evaluación">▾</button>',
+      '        <div class="combo-panel hidden" id="comboPanel" role="listbox"></div>',
+      '      </div>',
       '    </div>',
       '    <div class="field">',
       '      <label for="fechaInput">Fecha de la evaluación</label>',
@@ -229,37 +248,113 @@
     stepRoot.appendChild(node);
     var colInput = node.querySelector('#colegioInput');
     var fechaInput = node.querySelector('#fechaInput');
-    var datalistEl = node.querySelector('#colegiosList');
-    var recientesWrap = node.querySelector('#recientesWrap');
-    var recientesEl = node.querySelector('#recientes');
+    var toggle = node.querySelector('#comboToggle');
+    var panel = node.querySelector('#comboPanel');
     var err = node.querySelector('#colErr');
+    var open = false, activeIdx = -1, listRef = [];
 
-    function refresh() {
-      datalistEl.innerHTML = knownColegios().map(function (c) {
-        return '<option value="' + esc(c) + '"></option>';
-      }).join('');
-      var evals = knownEvaluations().slice(0, 8);
-      if (evals.length) {
-        recientesWrap.classList.remove('hidden');
-        recientesEl.innerHTML = evals.map(function (e, i) {
-          return '<button type="button" class="recent-chip" data-i="' + i + '">🏫 ' + esc(e.colegio) +
-            (e.fecha ? ' <span class="rc-date">· ' + esc(fmtDate(e.fecha)) + '</span>' : '') + '</button>';
-        }).join('');
-        recientesEl.querySelectorAll('.recent-chip').forEach(function (b) {
-          b.addEventListener('click', function () {
-            var e = evals[parseInt(b.getAttribute('data-i'), 10)];
-            colInput.value = e.colegio;
-            if (e.fecha) fechaInput.value = e.fecha;
-            err.textContent = '';
-          });
-        });
-      } else {
-        recientesWrap.classList.add('hidden');
-      }
+    function currentList() {
+      var q = norm(colInput.value);
+      var evals = knownEvaluations();
+      if (!q) return evals;
+      return evals.filter(function (e) { return norm(e.colegio).indexOf(q) >= 0; });
     }
-    colegioSuggestFn = refresh;
-    refresh();
-    startData(); // trae los colegios existentes desde Firebase (se refresca al llegar)
+
+    function renderPanel() {
+      listRef = currentList();
+      activeIdx = -1;
+      if (!listRef.length) {
+        var q = colInput.value.trim();
+        panel.innerHTML = '<div class="combo-empty">' + (q
+          ? 'Sin coincidencias. «' + esc(q) + '» se creará como colegio nuevo.'
+          : 'Aún no hay colegios con evaluación: escribe el nombre del primero.') + '</div>';
+        return;
+      }
+      panel.innerHTML = listRef.map(function (e, i) {
+        return '<div class="combo-row" data-i="' + i + '" role="option">' +
+          '<button type="button" class="combo-pick" data-i="' + i + '">' +
+          '  <span class="cp-name">🏫 ' + esc(e.colegio) + '</span>' +
+          (e.fecha ? '<span class="cp-date">' + esc(fmtDate(e.fecha)) + '</span>' : '') +
+          '</button>' +
+          '<button type="button" class="combo-del" data-i="' + i + '" title="Quitar de la lista" aria-label="Quitar ' + esc(e.colegio) + ' de la lista">×</button>' +
+          '</div>';
+      }).join('') +
+      '<div class="combo-note">La × solo quita la evaluación de esta lista; las respuestas guardadas no se borran.</div>';
+
+      // pointerdown (no click): se dispara antes del blur del input, así elegir
+      // o quitar funciona aunque el panel se cierre al perder el foco.
+      panel.querySelectorAll('.combo-pick').forEach(function (b) {
+        b.addEventListener('pointerdown', function (ev) {
+          ev.preventDefault();
+          pick(parseInt(b.getAttribute('data-i'), 10));
+        });
+      });
+      panel.querySelectorAll('.combo-del').forEach(function (b) {
+        b.addEventListener('pointerdown', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var e = listRef[parseInt(b.getAttribute('data-i'), 10)];
+          hideEvaluation(e);
+          showToast('Quitada de la lista');
+          renderPanel();
+        });
+      });
+    }
+
+    function pick(i) {
+      var e = listRef[i];
+      if (!e) return;
+      colInput.value = e.colegio;
+      if (e.fecha) fechaInput.value = e.fecha;
+      err.textContent = '';
+      setOpen(false);
+    }
+
+    function setOpen(v) {
+      open = v;
+      panel.classList.toggle('hidden', !v);
+      toggle.classList.toggle('open', v);
+      colInput.setAttribute('aria-expanded', v ? 'true' : 'false');
+      if (v) renderPanel();
+    }
+
+    function moveActive(delta) {
+      var rows = panel.querySelectorAll('.combo-row');
+      if (!rows.length) return;
+      activeIdx = (activeIdx + delta + rows.length) % rows.length;
+      rows.forEach(function (r, i) { r.classList.toggle('active', i === activeIdx); });
+      rows[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    toggle.addEventListener('click', function () { setOpen(!open); if (open) colInput.focus(); });
+    colInput.addEventListener('focus', function () { setOpen(true); });
+    // Al pasar a otro campo (p. ej. la fecha) el panel se cierra y deja de tapar.
+    colInput.addEventListener('blur', function () {
+      setTimeout(function () {
+        if (document.activeElement !== colInput) setOpen(false);
+      }, 120);
+    });
+    colInput.addEventListener('input', function () { err.textContent = ''; if (!open) setOpen(true); else renderPanel(); });
+    colInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        if (!open) setOpen(true);
+        moveActive(ev.key === 'ArrowDown' ? 1 : -1);
+      } else if (ev.key === 'Enter') {
+        if (open && activeIdx >= 0) { ev.preventDefault(); pick(activeIdx); }
+        else setOpen(false);
+      } else if (ev.key === 'Escape') { setOpen(false); }
+    });
+
+    // Cerrar al tocar fuera (listener que se autolimpia al salir del paso).
+    function onDocDown(ev) {
+      if (!document.body.contains(panel)) { document.removeEventListener('pointerdown', onDocDown); return; }
+      if (!node.querySelector('.combo').contains(ev.target)) setOpen(false);
+    }
+    document.addEventListener('pointerdown', onDocDown);
+
+    colegioSuggestFn = function () { if (open) renderPanel(); };
+    startData(); // trae los colegios existentes desde Firebase (refresca el panel al llegar)
 
     if (!col) colInput.focus();
     node.querySelector('#crearBtn').addEventListener('click', function () {

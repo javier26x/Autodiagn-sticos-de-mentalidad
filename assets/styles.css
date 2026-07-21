@@ -619,17 +619,46 @@ body.is-question .wrap { padding-top: calc(12px + env(safe-area-inset-top)); }
 .allDates input { width: 16px; height: 16px; accent-color: var(--green); }
 .field input[type="date"] { appearance: none; -webkit-appearance: none; }
 
-/* Chips de evaluaciones recientes (Paso 2). */
-.recent-label { font-size: 0.8rem; font-weight: 800; color: var(--ink-soft); margin: 12px 0 7px; }
-.recent-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
-.recent-chip {
-  border: 1px solid var(--line); background: #f4f9f8; color: var(--ink);
-  border-radius: 999px; padding: 8px 13px; font-weight: 700; font-size: 0.82rem;
-  cursor: pointer; font-family: inherit; display: inline-flex; gap: 6px; align-items: center;
-  transition: border-color 0.12s ease, background 0.12s ease;
+/* Combobox de colegios (Paso 2): desplegable propio con eliminar. */
+.combo-wrap { position: relative; }
+.combo-wrap input { padding-right: 52px; }
+.combo-toggle {
+  position: absolute; right: 7px; top: 7px; bottom: 7px; width: 40px;
+  border: 0; background: #eef2f5; border-radius: 10px; cursor: pointer;
+  color: var(--ink-soft); font-size: 0.85rem; font-weight: 900;
+  display: grid; place-items: center; font-family: inherit;
+  transition: background 0.12s ease;
 }
-.recent-chip:hover { border-color: var(--green); background: #e8f5f0; }
-.recent-chip .rc-date { color: var(--muted); font-weight: 700; }
+.combo-toggle:hover { background: #e2eae6; }
+.combo-toggle.open { background: #e8f5f0; color: var(--green-deep); }
+.combo-panel {
+  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 400;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 6px; max-height: 272px; overflow: auto;
+}
+.combo-row { display: flex; align-items: center; gap: 2px; border-radius: 10px; }
+.combo-row.active { background: #e8f5f0; }
+.combo-pick {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  border: 0; background: none; text-align: left; cursor: pointer; font-family: inherit;
+  padding: 12px 10px; border-radius: 10px; font-weight: 700; font-size: 0.95rem; color: var(--ink);
+  min-width: 0;
+}
+.combo-pick:hover { background: #e8f5f0; }
+.combo-pick .cp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.combo-pick .cp-date { flex: 0 0 auto; color: var(--muted); font-weight: 700; font-size: 0.8rem; }
+.combo-del {
+  flex: 0 0 auto; width: 34px; height: 34px; margin-right: 4px;
+  border: 0; background: none; border-radius: 9px; cursor: pointer; font-family: inherit;
+  color: var(--muted); font-size: 1.2rem; font-weight: 800; line-height: 1;
+  display: grid; place-items: center; transition: background 0.12s ease, color 0.12s ease;
+}
+.combo-del:hover { background: #fde8e4; color: #c2381f; }
+.combo-empty { padding: 13px 12px; color: var(--ink-soft); font-weight: 600; font-size: 0.9rem; }
+.combo-note {
+  padding: 8px 10px 5px; margin-top: 4px; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.74rem; font-weight: 600;
+}
 
 /* =========================================================================
  * Puerta de contraseña del facilitador
