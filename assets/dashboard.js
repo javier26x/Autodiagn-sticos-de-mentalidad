@@ -13,6 +13,7 @@
   var Q = window.QUIZ;
   var LOCAL_RESULTS_KEY = 'jump-mindset-local-results-v1';
   var EVAL_KEY = 'jump-eval-v1';
+  var EVAL_HISTORY_KEY = 'jump-eval-history-v1';
   var AUTH_KEY = 'jump-facilitator-ok';
 
   var stepRoot = document.getElementById('stepRoot');
@@ -49,6 +50,41 @@
     try { return JSON.parse(localStorage.getItem(EVAL_KEY) || 'null'); } catch (e) { return null; }
   })();
   function saveEval() { try { localStorage.setItem(EVAL_KEY, JSON.stringify(evaluation)); } catch (e) {} }
+
+  // Historial local de evaluaciones creadas en este dispositivo (para sugerir
+  // colegios/fechas aunque todavía no tengan respuestas en la nube).
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(EVAL_HISTORY_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function pushHistory(ev) {
+    if (!ev || !ev.colegio) return;
+    var hlist = loadHistory().filter(function (x) { return !(x.colegio === ev.colegio && x.fecha === ev.fecha); });
+    hlist.unshift({ colegio: ev.colegio, fecha: ev.fecha });
+    if (hlist.length > 40) hlist = hlist.slice(0, 40);
+    try { localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(hlist)); } catch (e) {}
+  }
+  // Colegios conocidos = historial local + colegios con respuestas en la nube.
+  function knownColegios() {
+    var set = {};
+    loadHistory().forEach(function (e) { var c = (e.colegio || '').trim(); if (c) set[c] = true; });
+    (allRows || []).forEach(function (r) { var c = (r.colegio || '').trim(); if (c) set[c] = true; });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+  }
+  // Evaluaciones conocidas (colegio + fecha) para reabrir con un toque.
+  function knownEvaluations() {
+    var seen = {}, out = [];
+    function add(colegio, fecha) {
+      colegio = (colegio || '').trim();
+      if (!colegio) return;
+      var k = colegio + '||' + (fecha || '');
+      if (seen[k]) return;
+      seen[k] = true;
+      out.push({ colegio: colegio, fecha: fecha || '' });
+    }
+    loadHistory().forEach(function (e) { add(e.colegio, e.fecha); });
+    (allRows || []).forEach(function (r) { add(r.colegio, r.fecha); });
+    return out;
+  }
 
   function hasPassword() { return !!(CFG.facilitatorPassword); }
   function needsLogin() { return hasPassword() && !authed; }
@@ -160,6 +196,8 @@
   // =========================================================================
   // PASO 2 · Colegio + fecha (crear evaluación)
   // =========================================================================
+  var colegioSuggestFn = null; // permite refrescar las sugerencias cuando llega data
+
   function renderColegio() {
     var col = (evaluation && evaluation.colegio) || CFG.defaultColegio || '';
     var fecha = (evaluation && evaluation.fecha) || todayISO();
@@ -168,10 +206,15 @@
       '  <div class="card">',
       '    <div class="eyebrow">Paso 2 · Nueva evaluación</div>',
       '    <h1 style="margin:6px 0 4px;font-size:1.6rem">¿En qué colegio la aplicas?</h1>',
-      '    <p style="margin:0 0 12px">Con esto se crea la evaluación de este colegio para la fecha de hoy (puedes cambiarla).</p>',
+      '    <p style="margin:0 0 12px">Elige un colegio que ya tiene evaluación o escribe uno nuevo. Se crea la evaluación para la fecha indicada.</p>',
       '    <div class="field">',
       '      <label for="colegioInput">Nombre del colegio</label>',
-      '      <input id="colegioInput" type="text" placeholder="Ej. Colegio San Martín" autocomplete="off" value="' + esc(col) + '" />',
+      '      <input id="colegioInput" type="text" list="colegiosList" placeholder="Escribe o elige un colegio…" autocomplete="off" value="' + esc(col) + '" />',
+      '      <datalist id="colegiosList"></datalist>',
+      '    </div>',
+      '    <div id="recientesWrap" class="hidden">',
+      '      <div class="recent-label">Evaluaciones recientes · toca para reabrir</div>',
+      '      <div class="recent-chips" id="recientes"></div>',
       '    </div>',
       '    <div class="field">',
       '      <label for="fechaInput">Fecha de la evaluación</label>',
@@ -186,14 +229,46 @@
     stepRoot.appendChild(node);
     var colInput = node.querySelector('#colegioInput');
     var fechaInput = node.querySelector('#fechaInput');
+    var datalistEl = node.querySelector('#colegiosList');
+    var recientesWrap = node.querySelector('#recientesWrap');
+    var recientesEl = node.querySelector('#recientes');
     var err = node.querySelector('#colErr');
-    colInput.focus();
+
+    function refresh() {
+      datalistEl.innerHTML = knownColegios().map(function (c) {
+        return '<option value="' + esc(c) + '"></option>';
+      }).join('');
+      var evals = knownEvaluations().slice(0, 8);
+      if (evals.length) {
+        recientesWrap.classList.remove('hidden');
+        recientesEl.innerHTML = evals.map(function (e, i) {
+          return '<button type="button" class="recent-chip" data-i="' + i + '">🏫 ' + esc(e.colegio) +
+            (e.fecha ? ' <span class="rc-date">· ' + esc(fmtDate(e.fecha)) + '</span>' : '') + '</button>';
+        }).join('');
+        recientesEl.querySelectorAll('.recent-chip').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var e = evals[parseInt(b.getAttribute('data-i'), 10)];
+            colInput.value = e.colegio;
+            if (e.fecha) fechaInput.value = e.fecha;
+            err.textContent = '';
+          });
+        });
+      } else {
+        recientesWrap.classList.add('hidden');
+      }
+    }
+    colegioSuggestFn = refresh;
+    refresh();
+    startData(); // trae los colegios existentes desde Firebase (se refresca al llegar)
+
+    if (!col) colInput.focus();
     node.querySelector('#crearBtn').addEventListener('click', function () {
       var c = colInput.value.trim();
       var f = fechaInput.value || todayISO();
-      if (!c) { err.textContent = 'Escribe el nombre del colegio.'; colInput.focus(); return; }
+      if (!c) { err.textContent = 'Escribe o elige el nombre del colegio.'; colInput.focus(); return; }
       evaluation = { colegio: c, fecha: f };
       saveEval();
+      pushHistory(evaluation);
       go('qr');
     });
   }
@@ -554,6 +629,9 @@
         var first = resultsEl && resultsEl.querySelector('.stats .stat');
         if (first) { first.classList.remove('bump'); void first.offsetWidth; first.classList.add('bump'); }
       }
+    } else if (current === 'colegio' && colegioSuggestFn) {
+      // Al llegar colegios desde Firebase, refrescar el autocompletado del Paso 2.
+      colegioSuggestFn();
     }
   }
   function matchEval(r) {
