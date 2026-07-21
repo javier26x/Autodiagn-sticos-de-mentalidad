@@ -71,8 +71,19 @@
     root.appendChild(node);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function bandColorVar(bandId) {
-    return bandId === 'fija' ? 'var(--band-fija)' : bandId === 'mixta' ? 'var(--band-mixta)' : 'var(--band-crec)';
+  // Identificador anónimo y estable del dispositivo (sobrevive a "Empezar de
+  // nuevo"): el tablero se queda con el último envío de cada dispositivo y así
+  // rehacer la encuesta no infla los resultados.
+  var PID_KEY = 'jump-mindset-pid-v1';
+  function getPid() {
+    try {
+      var p = localStorage.getItem(PID_KEY);
+      if (!p) {
+        p = 'p' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        localStorage.setItem(PID_KEY, p);
+      }
+      return p;
+    } catch (e) { return ''; }
   }
   function gaugePct(score) {
     var pct = ((score - Q.SCORE_MIN) / (Q.SCORE_MAX - Q.SCORE_MIN)) * 100;
@@ -298,7 +309,8 @@
       '        <span class="band-tag">' + esc(shortBand(b2)) + '</span>',
       '      </div>',
       '    </div>',
-      '    <div class="gauge" style="margin-top:20px">',
+      '    <div class="slope-wrap">' + slopeSVG(res.m1, res.m2) + '</div>',
+      '    <div class="gauge" style="margin-top:26px">',
       '      <div class="gauge-track">',
       '        <div class="gauge-mark blue" data-left="' + gaugePct(res.m1) + '" style="left:0" data-label="M1"></div>',
       '        <div class="gauge-mark green" data-left="' + gaugePct(res.m2) + '" style="left:0" data-label="M2"></div>',
@@ -313,7 +325,8 @@
       itemLog(res),
       '  </div>',
       '  <div class="card">',
-      '    <p class="fineprint" style="margin-top:0">El puntaje es una fotografía, no un veredicto: la mentalidad es cultivable. Las bandas son provisionales y se recalibran tras la primera aplicación.</p>',
+      '    <div class="grow-banner">🌱 <b>La mentalidad se cultiva.</b> Cada desafío matemático que enfrentas hace crecer tu cerebro — ese es el corazón de JUMP Math.</div>',
+      '    <p class="fineprint" style="margin-top:0">El puntaje es una fotografía, no un veredicto. Las bandas son provisionales y se recalibran tras la primera aplicación.</p>',
       '    <div class="btn-row noprint">',
       '      <button class="btn btn--ghost small" id="printBtn" style="color:#0a6b52;border-color:#bfe0d5">Guardar / imprimir</button>',
       '      <button class="btn btn--dark small" id="againBtn">Empezar de nuevo</button>',
@@ -346,6 +359,31 @@
       if (t < 1) requestAnimationFrame(frame);
     }
     frame();
+  }
+
+  // El "salto" M1 -> M2 como pendiente (slopegraph): la imagen que resume la
+  // actividad. Línea naranja si baja hacia lo fijo, verde si sube, gris si igual.
+  function slopeSVG(m1, m2) {
+    function y(s) { return 104 - ((s - 8) / 40) * 84; } // 8→104 · 48→20
+    var y1 = y(m1), y2 = y(m2);
+    var d = m2 - m1;
+    var color = d < 0 ? '#ea5a2d' : (d > 0 ? '#0aa17e' : '#94a3b8');
+    var badgeY = Math.max(26, Math.min(92, (y1 + y2) / 2 - 18));
+    return [
+      '<svg class="slope" viewBox="0 0 320 140" role="img" aria-label="Tu puntaje pasa de ' + m1 + ' en general a ' + m2 + ' en matemáticas">',
+      '<line x1="70" y1="16" x2="70" y2="108" stroke="#e6ecf0" stroke-width="2"/>',
+      '<line x1="250" y1="16" x2="250" y2="108" stroke="#e6ecf0" stroke-width="2"/>',
+      '<line class="slope-line" x1="70" y1="' + y1 + '" x2="250" y2="' + y2 + '" stroke="' + color + '" stroke-width="5" stroke-linecap="round"/>',
+      '<circle cx="70" cy="' + y1 + '" r="9" fill="#0091d5" stroke="#fff" stroke-width="3"/>',
+      '<circle cx="250" cy="' + y2 + '" r="9" fill="#0aa17e" stroke="#fff" stroke-width="3"/>',
+      '<text x="52" y="' + (y1 + 5) + '" text-anchor="end" class="slope-val" fill="#0091d5">' + m1 + '</text>',
+      '<text x="268" y="' + (y2 + 5) + '" text-anchor="start" class="slope-val" fill="#0aa17e">' + m2 + '</text>',
+      '<g class="slope-delta"><rect x="126" y="' + (badgeY - 13) + '" width="68" height="26" rx="13" fill="' + color + '"/>',
+      '<text x="160" y="' + (badgeY + 5) + '" text-anchor="middle" fill="#fff" class="slope-delta-txt">' + (d > 0 ? '+' : '') + d + ' pts</text></g>',
+      '<text x="70" y="128" text-anchor="middle" class="slope-axis">EN GENERAL</text>',
+      '<text x="250" y="128" text-anchor="middle" class="slope-axis">EN MATEMÁTICAS</text>',
+      '</svg>'
+    ].join('');
   }
 
   function shortBand(b) {
@@ -393,6 +431,8 @@
       gap: res.gap, sex: res.sex || '',
       colegio: state.colegio || '',
       fecha: state.fecha || '',
+      pid: getPid(),
+      r1: res.responsesM1, r2: res.responsesM2, // detalle por ítem (para el desglose del panel)
       event: CFG.eventName || ''
     };
 

@@ -481,6 +481,80 @@ body.panel-wide .wrap { max-width: 1180px; }
 }
 .viz-tip.on { opacity: 1; }
 
+/* --- Salto M1 -> M2 (slopegraph del resultado individual) ------------------ */
+.slope-wrap { display: flex; justify-content: center; margin: 14px 0 2px; }
+.slope { width: 100%; max-width: 370px; height: auto; display: block; }
+.slope-val { font-weight: 900; font-size: 16px; font-family: inherit; }
+.slope-axis { font-size: 10.5px; font-weight: 800; fill: #8a94a6; letter-spacing: 0.6px; font-family: inherit; }
+.slope-delta-txt { font-weight: 900; font-size: 13px; font-family: inherit; }
+.slope-line { stroke-dasharray: 260; stroke-dashoffset: 260; animation: drawline 0.7s 0.35s cubic-bezier(.22,.9,.3,1) forwards; }
+@keyframes drawline { to { stroke-dashoffset: 0; } }
+.slope-delta { opacity: 0; animation: fadein 0.4s 1s ease forwards; }
+@keyframes fadein { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .slope-line { animation: none; stroke-dashoffset: 0; }
+  .slope-delta { animation: none; opacity: 1; }
+}
+
+/* --- Banner de crecimiento (cierre JUMP) ----------------------------------- */
+.grow-banner {
+  background: linear-gradient(120deg, #0aa17e, #0091d5);
+  color: #fff; border-radius: 14px; padding: 14px 16px;
+  font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px;
+}
+.grow-banner b { font-weight: 900; }
+
+/* --- Contador en vivo junto al QR ------------------------------------------ */
+.qr-live {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: rgba(255,255,255,0.14); color: #fff; font-weight: 800;
+  padding: 8px 15px; border-radius: 999px; font-size: 0.88rem;
+  backdrop-filter: blur(4px);
+}
+.qr-live b { font-size: 1.15rem; line-height: 1; }
+.qr-live.bump { animation: bump 0.6s ease; }
+
+/* --- Mancuernas por sexo (M1 -> M2) ---------------------------------------- */
+.dumb-row { margin: 13px 0; }
+.dumb-head { display: flex; align-items: baseline; gap: 6px; font-size: 0.88rem; margin-bottom: 8px; color: var(--ink); }
+.dumb-gap { margin-left: auto; font-weight: 900; font-size: 0.85rem; }
+.dumb-track {
+  position: relative; height: 12px; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(234,90,45,0.16) 0 33%, rgba(148,163,184,0.2) 33% 62%, rgba(10,161,126,0.16) 62% 100%);
+}
+.dumb-line { position: absolute; top: 50%; transform: translateY(-50%); height: 5px; border-radius: 999px; }
+.dumb-dot {
+  position: absolute; top: 50%; width: 15px; height: 15px; border-radius: 50%;
+  transform: translate(-50%, -50%); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.dumb-dot.blue { background: var(--blue); }
+.dumb-dot.green { background: var(--green); }
+
+/* --- Desglose por afirmación (panel) --------------------------------------- */
+.dash-items { margin-top: 18px; }
+.dash-items summary { font-size: 0.95rem; }
+.items-grid { display: grid; grid-template-columns: 1fr; gap: 12px 28px; margin-top: 8px; }
+@media (min-width: 900px) { .items-grid { grid-template-columns: 1fr 1fr; } }
+.item-txt {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); line-height: 1.3; margin-bottom: 4px;
+}
+.item-n {
+  flex: 0 0 auto; width: 19px; height: 19px; border-radius: 50%;
+  background: #eef2f5; color: var(--ink-soft); display: grid; place-items: center;
+  font-size: 0.68rem; font-weight: 900;
+}
+.hot-tag { color: #c2521f; font-weight: 900; font-size: 0.7rem; white-space: nowrap; }
+.ib { position: relative; height: 14px; border-radius: 7px; background: #eef2f5; margin: 3px 0; }
+.ib-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; }
+.ib-fill.blue { background: var(--blue); }
+.ib-fill.green { background: var(--green); }
+.ib-val {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  font-size: 0.66rem; font-weight: 900; color: var(--ink);
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+}
+
 /* --- Aviso de nueva respuesta --------------------------------------------- */
 .toast {
   position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));

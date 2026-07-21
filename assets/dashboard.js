@@ -408,7 +408,10 @@
     startData(); // empieza a escuchar respuestas en segundo plano
     var node = h([
       '<div class="view">',
-      '  <div class="eval-chip">🏫 ' + esc(evaluation.colegio) + ' · 📅 ' + esc(fmtDate(evaluation.fecha)) + '</div>',
+      '  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">',
+      '    <div class="eval-chip">🏫 ' + esc(evaluation.colegio) + ' · 📅 ' + esc(fmtDate(evaluation.fecha)) + '</div>',
+      '    <div class="qr-live noprint"><span class="live-dot"></span><b id="qrCount">' + evalRows().length + '</b>&nbsp;respuestas</div>',
+      '  </div>',
       '  <div class="card" style="margin-top:12px">',
       '    <div class="eyebrow">Paso 3 · Proyecta esto en la sala</div>',
       '    <h1 style="margin:6px 0 12px">Escanea para responder</h1>',
@@ -453,13 +456,27 @@
   // =========================================================================
   var includeAllDates = false;
 
+  // Un dispositivo que rehace la encuesta manda otro envío con el mismo pid:
+  // nos quedamos con el último para no inflar los resultados. Los envíos
+  // antiguos (sin pid) se conservan todos.
+  function dedupe(rows) {
+    var noPid = [], byPid = {};
+    rows.forEach(function (r, idx) {
+      if (!r.pid) { noPid.push(r); return; }
+      var t = (r.ts && (r.ts.seconds || r.ts._seconds)) || idx;
+      var prev = byPid[r.pid];
+      if (!prev || t >= prev.t) byPid[r.pid] = { r: r, t: t };
+    });
+    return noPid.concat(Object.keys(byPid).map(function (k) { return byPid[k].r; }));
+  }
+
   function evalRows() {
-    if (!evaluation) return allRows;
-    return allRows.filter(function (r) {
+    if (!evaluation) return dedupe(allRows);
+    return dedupe(allRows.filter(function (r) {
       if ((r.colegio || '') !== (evaluation.colegio || '')) return false;
       if (!includeAllDates && (r.fecha || '') !== (evaluation.fecha || '')) return false;
       return true;
-    });
+    }));
   }
 
   var resultsEl = null, sourceNote = null;
@@ -606,19 +623,83 @@
   }
 
   var SEX_LABEL = { F: 'Mujeres', M: 'Hombres', X: 'Sin especificar' };
-  function sexTable(bySex) {
-    var keys = Object.keys(bySex);
-    if (!keys.length) return '';
-    var rows = ['F', 'M', 'X'].filter(function (k) { return bySex[k]; }).map(function (k) {
+
+  // Mancuernas por sexo: dos puntos (M1 y M2) unidos por una línea sobre la
+  // escala 8–48. La imagen responde de un vistazo la pregunta de género.
+  function sexDumbbells(bySex) {
+    var groups = ['F', 'M', 'X'].filter(function (k) { return bySex[k]; });
+    if (!groups.length) return '';
+    var rows = groups.map(function (k) {
       var g = bySex[k];
-      return '<tr><td class="txt">' + (SEX_LABEL[k] || k) + '</td><td>' + g.n + '</td><td>' + num(g.s1 / g.n, 1) +
-        '</td><td>' + num(g.s2 / g.n, 1) + '</td><td><b>' + (g.g / g.n >= 0 ? '+' : '') + num(g.g / g.n, 1) + '</b></td></tr>';
+      var a1 = g.s1 / g.n, a2 = g.s2 / g.n, gap = g.g / g.n;
+      var x1 = gaugePct(a1), x2 = gaugePct(a2);
+      var lo = Math.min(x1, x2), w = Math.max(Math.abs(x2 - x1), 0.5);
+      var lineColor = a2 < a1 ? 'var(--band-fija)' : (a2 > a1 ? 'var(--band-crec)' : 'var(--band-mixta)');
+      var gapColor = a2 < a1 ? '#c2521f' : '#0a7e62';
+      return [
+        '<div class="dumb-row">',
+        '  <div class="dumb-head"><b>' + (SEX_LABEL[k] || k) + '</b><span class="muted"> · ' + g.n + ' resp.</span>',
+        '  <span class="dumb-gap" style="color:' + gapColor + '">' + (gap >= 0 ? '+' : '') + num(gap, 1) + ' pts</span></div>',
+        '  <div class="dumb-track">',
+        '    <span class="dumb-line" style="left:' + lo + '%;width:' + w + '%;background:' + lineColor + '"></span>',
+        '    <span class="dumb-dot blue" style="left:' + x1 + '%" data-tip="' + (SEX_LABEL[k] || k) + ' · M1 en general: ' + num(a1, 1) + '"></span>',
+        '    <span class="dumb-dot green" style="left:' + x2 + '%" data-tip="' + (SEX_LABEL[k] || k) + ' · M2 en matemáticas: ' + num(a2, 1) + '"></span>',
+        '  </div>',
+        '</div>'
+      ].join('');
     }).join('');
     return [
-      '<h2 class="dash-h">Sondeo agregado por sexo</h2>',
-      '<p class="fineprint" style="margin:0 0 8px">Legítimo porque la escala demostró invarianza de medición por sexo. Anónimo y agregado.</p>',
-      '<table class="log"><thead><tr><th class="txt">Grupo</th><th>N</th><th>Prom. M1</th><th>Prom. M2</th><th>Brecha</th></tr></thead>',
-      '<tbody>' + rows + '</tbody></table>'
+      '<h2 class="dash-h">Sondeo por sexo · el salto M1→M2</h2>',
+      '<p class="fineprint" style="margin:0 0 10px">Anónimo y agregado (la escala es válida por sexo). ',
+      '<span class="mchip blue" style="font-size:.62rem">M1</span> general · <span class="mchip green" style="font-size:.62rem">M2</span> matemáticas.</p>',
+      rows,
+      '<div class="gauge-scale" style="margin-top:4px"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div>'
+    ].join('');
+  }
+
+  // Desglose por afirmación: promedio de puntos de crecimiento (1–6) por ítem.
+  // Solo con envíos nuevos que traen el detalle (r1/r2).
+  function itemStats(rows) {
+    var withItems = rows.filter(function (r) {
+      return Array.isArray(r.r1) && Array.isArray(r.r2) && r.r1.length === 8 && r.r2.length === 8;
+    });
+    if (!withItems.length) return null;
+    var items = Q.MOMENTS.m1.items;
+    var out = items.map(function (it, i) {
+      var s1 = 0, s2 = 0;
+      withItems.forEach(function (r) {
+        s1 += Q.itemPoints(it.type, r.r1[i]);
+        s2 += Q.itemPoints(it.type, r.r2[i]);
+      });
+      return { n: it.n, text: Q.MOMENTS.m2.items[i].text, type: it.type, a1: s1 / withItems.length, a2: s2 / withItems.length };
+    });
+    return { n: withItems.length, items: out };
+  }
+
+  function itemBlockHTML(ist) {
+    // Las 2 afirmaciones con menor promedio M2 = las que se viven como más fijas.
+    var lowest = ist.items.slice().sort(function (a, b) { return a.a2 - b.a2; }).slice(0, 2)
+      .map(function (it) { return it.n; });
+    var rows = ist.items.map(function (it) {
+      var short = it.text.length > 60 ? it.text.slice(0, 57) + '…' : it.text;
+      var hot = lowest.indexOf(it.n) >= 0;
+      return [
+        '<div class="item-row" data-tip="' + esc(it.text) + '">',
+        '  <div class="item-txt"><span class="item-n">' + it.n + '</span>' + esc(short),
+        (hot ? ' <span class="hot-tag">▼ más fija</span>' : ''),
+        '  </div>',
+        '  <div class="ib"><span class="ib-fill blue" style="width:' + ((it.a1 - 1) / 5 * 100) + '%"></span><span class="ib-val">' + it.a1.toFixed(1) + '</span></div>',
+        '  <div class="ib"><span class="ib-fill green" style="width:' + ((it.a2 - 1) / 5 * 100) + '%"></span><span class="ib-val">' + it.a2.toFixed(1) + '</span></div>',
+        '</div>'
+      ].join('');
+    }).join('');
+    return [
+      '<details class="itemlog dash-items">',
+      '  <summary>Ver desglose por afirmación · ¿cuáles se viven como más fijas?</summary>',
+      '  <p class="fineprint" style="margin:8px 0 6px">Promedio de puntos de crecimiento por afirmación (1–6): barra más corta = mirada más fija. ',
+      '  <span class="mchip blue" style="font-size:.62rem">M1</span> general · <span class="mchip green" style="font-size:.62rem">M2</span> matemáticas · ' + ist.n + ' respuesta(s) con detalle.</p>',
+      '  <div class="items-grid">' + rows + '</div>',
+      '</details>'
     ].join('');
   }
 
@@ -664,7 +745,7 @@
       '  <div class="dash-col">',
       '    <div class="dash-block">',
       '      <h2 class="dash-h">Promedio de la sala en la escala</h2>',
-      '      <div class="gauge" style="margin-top:20px"><div class="gauge-track">',
+      '      <div class="gauge" style="margin-top:30px"><div class="gauge-track">',
       '        <div class="gauge-mark blue" style="left:' + gaugePct(st.m1avg) + '%" data-label="M1"></div>',
       '        <div class="gauge-mark green" style="left:' + gaugePct(st.m2avg) + '%" data-label="M2"></div>',
       '      </div><div class="gauge-scale"><span>8 · fija</span><span>mixta</span><span>crecimiento · 48</span></div></div>',
@@ -681,9 +762,10 @@
       '    </div>',
       '  </div>',
       (CFG.askSex !== false
-        ? '  <div class="dash-col"><div class="dash-block">' + sexTable(st.bySex) + '</div></div>'
+        ? '  <div class="dash-col"><div class="dash-block">' + sexDumbbells(st.bySex) + '</div></div>'
         : ''),
-      '</div>'
+      '</div>',
+      (function () { var ist = itemStats(rows); return ist ? itemBlockHTML(ist) : ''; })()
     ].join('');
     animateNums(resultsEl);
     attachTips(resultsEl);
@@ -709,11 +791,10 @@
   }
 
   function setData(rows) {
-    var newRows = rows || [];
-    // Aviso solo si crece dentro de la evaluación actual.
-    var before = evaluation ? allRows.filter(matchEval).length : allRows.length;
-    allRows = newRows;
-    var after = evaluation ? allRows.filter(matchEval).length : allRows.length;
+    // Aviso solo si crece dentro de la evaluación actual (ya deduplicado).
+    var before = evalRows().length;
+    allRows = rows || [];
+    var after = evalRows().length;
     var increased = (prevTotal !== null && after > before);
     prevTotal = after;
     if (current === 'resultados') {
@@ -724,15 +805,21 @@
         var first = resultsEl && resultsEl.querySelector('.stats .stat');
         if (first) { first.classList.remove('bump'); void first.offsetWidth; first.classList.add('bump'); }
       }
+    } else if (current === 'qr') {
+      // Contador en vivo junto al QR proyectado.
+      var qc = document.getElementById('qrCount');
+      if (qc) {
+        qc.textContent = after;
+        if (increased) {
+          showToast('Nueva respuesta ✓');
+          var pill = qc.closest('.qr-live');
+          if (pill) { pill.classList.remove('bump'); void pill.offsetWidth; pill.classList.add('bump'); }
+        }
+      }
     } else if (current === 'colegio' && colegioSuggestFn) {
       // Al llegar colegios desde Firebase, refrescar el autocompletado del Paso 2.
       colegioSuggestFn();
     }
-  }
-  function matchEval(r) {
-    if ((r.colegio || '') !== (evaluation.colegio || '')) return false;
-    if (!includeAllDates && (r.fecha || '') !== (evaluation.fecha || '')) return false;
-    return true;
   }
 
   function subscribeCloud() {
